@@ -70,7 +70,6 @@ print("Target:\t\t", crispiness_to_colour(crispiness))
 
 start_ctrl = 1
 start_time = 0
-durration = 0
 
 while(True): 
 
