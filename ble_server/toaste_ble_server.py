@@ -286,6 +286,8 @@ class SetTargetCrispCharacteristic(Characteristic):
 
 app = Application()
 app.add_service(ThermometerService(0))
+app.add_service(TimerService(1))
+app.add_service(CrispinessService(2))
 app.register()
 
 adv = ToastE_Advertisement(0)
