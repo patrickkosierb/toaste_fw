@@ -1,5 +1,6 @@
 #!/usr/bin/python3
 
+import random
 import dbus
 
 from advertisement import Advertisement
@@ -9,7 +10,7 @@ from gpiozero import CPUTemperature
 GATT_CHRC_IFACE = "org.bluez.GattCharacteristic1"
 NOTIFY_TIMEOUT = 5000
 
-class ThermometerAdvertisement(Advertisement):
+class ToastE_Advertisement(Advertisement):
     def __init__(self, index):
         Advertisement.__init__(self, index, "peripheral")
         self.add_local_name("Toast-E")
@@ -146,11 +147,148 @@ class UnitDescriptor(Descriptor):
 
         return value
 
+class TimerService(Service):
+    # Timer Service
+    TIMER_SERVICE_UUID = '0000ffe0-0000-1000-8000-00805f9b34fb'
+
+    def __init__(self, index):
+        Service.__init__(self, index, self.TIMER_SERVICE_UUID, True)
+        self.add_characteristic(GetTimeCharacteristic(self))
+
+class GetTimeCharacteristic(Characteristic):
+    GET_TIME_CHAR_UUID = '0000ffe1-0000-1000-8000-00805f9b34fb'
+
+    def __init__(self, service):
+        self.notifying = False
+
+        Characteristic.__init__(
+                self, self.GET_TIME_CHAR_UUID,
+                ["notify", "read"], service)
+        # self.add_descriptor(TempDescriptor(self))
+
+    def get_time_remaining(self):
+        value = []
+        
+        time_sec = random.randint(0, 500)
+
+        strtemp = str(round(time_sec, 1))
+        for c in strtemp:
+            value.append(dbus.Byte(c.encode()))
+
+        return value
+
+    def set_time_remaining_callback(self):
+        if self.notifying:
+            value = self.get_time_remaining()
+            self.PropertiesChanged(GATT_CHRC_IFACE, {"Value": value}, [])
+
+        return self.notifying
+
+    def StartNotify(self):
+        if self.notifying:
+            return
+
+        self.notifying = True
+
+        value = self.get_time_remaining()
+        self.PropertiesChanged(GATT_CHRC_IFACE, {"Value": value}, [])
+        self.add_timeout(NOTIFY_TIMEOUT, self.set_time_remaining_callback)
+
+    def StopNotify(self):
+        self.notifying = False
+
+    def ReadValue(self, options):
+        value = self.get_time_remaining()
+
+        return value
+
+class CrispinessService(Service):
+    CRISPINESS_SERVICE_UUID = '0000ffa0-0000-1000-8000-00805f9b34fb'
+
+    def __init__(self, index):
+        self.target_crispiness = 0
+
+        Service.__init__(self, index, self.CRISPINESS_SERVICE_UUID, True)
+        self.add_characteristic(GetCurrentCrispCharacteristic(self))
+        self.add_characteristic(SetTargetCrispCharacteristic(self))
+
+    def set_target_crispiness(self, crispiness):
+        self.target_crispiness = crispiness
+
+class GetCurrentCrispCharacteristic(Characteristic):
+    CURRENT_CRISP_CHAR_UUID = '0000ffa2-0000-1000-8000-00805f9b34fb'
+
+    def __init__(self, service):
+        self.crispiness = 0
+
+        self.notifying = False
+
+        Characteristic.__init__(
+                self, self.CURRENT_CRISP_CHAR_UUID,
+                ["notify", "read"], service)
+        # self.add_descriptor(TempDescriptor(self))
+
+    def get_current_crispiness(self):
+        value = []
+        
+        self.crispiness = self.crispiness + 0.05
+
+        strtemp = str(round(self.crispiness, 2))
+        for c in strtemp:
+            value.append(dbus.Byte(c.encode()))
+
+        return value
+
+    def set_crispiness_callback(self):
+        if self.notifying:
+            value = self.get_current_crispiness()
+            self.PropertiesChanged(GATT_CHRC_IFACE, {"Value": value}, [])
+
+        return self.notifying
+
+    def StartNotify(self):
+        if self.notifying:
+            return
+
+        self.notifying = True
+
+        value = self.get_current_crispiness()
+        self.PropertiesChanged(GATT_CHRC_IFACE, {"Value": value}, [])
+        self.add_timeout(NOTIFY_TIMEOUT, self.set_crispiness_callback)
+
+    def StopNotify(self):
+        self.notifying = False
+
+    def ReadValue(self, options):
+        value = self.get_current_crispiness()
+
+        return value
+    
+
+class SetTargetCrispCharacteristic(Characteristic):
+    TARGET_CRISP_CHAR_UUID = '0000ffa1-0000-1000-8000-00805f9b34fb'
+
+    def __init__(self, service):
+        Characteristic.__init__(
+                self, self.TARGET_CRISP_CHAR_UUID,
+                ["write"], service)
+        # self.add_descriptor(TempDescriptor(self))
+
+    def WriteValue(self, value, options):
+        val = float(value)
+
+        print(val)
+
+        self.service.set_target_crispiness(val)
+
+
+# TODO: move to main.py
+
 app = Application()
 app.add_service(ThermometerService(0))
 app.register()
 
-adv = ThermometerAdvertisement(0)
+adv = ToastE_Advertisement(0)
 adv.register()
 
 try:
