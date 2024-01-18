@@ -180,6 +180,7 @@ class GetTimeCharacteristic(Characteristic):
     def set_time_remaining_callback(self):
         if self.notifying:
             value = self.get_time_remaining()
+            print("Notification value: " + str(value) + " seconds")
             self.PropertiesChanged(GATT_CHRC_IFACE, {"Value": value}, [])
 
         return self.notifying
@@ -199,6 +200,7 @@ class GetTimeCharacteristic(Characteristic):
 
     def ReadValue(self, options):
         value = self.get_time_remaining()
+        print("ReadValue Time Remaining")
 
         return value
 
@@ -240,8 +242,10 @@ class GetCurrentCrispCharacteristic(Characteristic):
         return value
 
     def set_crispiness_callback(self):
+
         if self.notifying:
             value = self.get_current_crispiness()
+            print("notification value: " + str(value))
             self.PropertiesChanged(GATT_CHRC_IFACE, {"Value": value}, [])
 
         return self.notifying
@@ -260,6 +264,8 @@ class GetCurrentCrispCharacteristic(Characteristic):
         self.notifying = False
 
     def ReadValue(self, options):
+        print("ReadValue")
+
         value = self.get_current_crispiness()
 
         return value
@@ -275,9 +281,8 @@ class SetTargetCrispCharacteristic(Characteristic):
         # self.add_descriptor(TempDescriptor(self))
 
     def WriteValue(self, value, options):
+        print("Received Value: " + str(value))
         val = float(value)
-
-        print(val)
 
         self.service.set_target_crispiness(val)
 
