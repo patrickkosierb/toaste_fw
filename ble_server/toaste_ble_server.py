@@ -113,6 +113,7 @@ class UnitCharacteristic(Characteristic):
         self.add_descriptor(UnitDescriptor(self))
 
     def WriteValue(self, value, options):
+        print("Received Value: " + str(value))
         val = str(value[0]).upper()
         if val == "C":
             self.service.set_farenheit(False)
@@ -278,13 +279,32 @@ class SetTargetCrispCharacteristic(Characteristic):
         Characteristic.__init__(
                 self, self.TARGET_CRISP_CHAR_UUID,
                 ["write"], service)
-        # self.add_descriptor(TempDescriptor(self))
+        self.add_descriptor(TargetCrispiness_Descriptor(self))
 
     def WriteValue(self, value, options):
         print("Received Value: " + str(value))
         val = float(value)
 
         self.service.set_target_crispiness(val)
+
+class TargetCrispiness_Descriptor(Descriptor):
+    TARGET_CRISPINESS_DESCRIPTOR_UUID = "1313"
+    TARGET_CRISPINESS_DESCRIPTOR_VALUE = "Target Crispiness (range 0.0-1.0)"
+
+    def __init__(self, characteristic):
+        Descriptor.__init__(
+                self, self.TARGET_CRISPINESS_DESCRIPTOR_UUID,
+                ["read"],
+                characteristic)
+
+    def ReadValue(self, options):
+        value = []
+        desc = self.TARGET_CRISPINESS_DESCRIPTOR_VALUE
+
+        for c in desc:
+            value.append(dbus.Byte(c.encode()))
+
+        return value
 
 
 # TODO: move to main.py
