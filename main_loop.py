@@ -1,11 +1,11 @@
-import cv2
+# import cv2
 import RPi.GPIO as GPIO
 import sys
 import time
 import numpy as np
 from parameters import slope, intercept
 
-# Eventually these will just be hard coded
+Eventually these will just be hard coded
 slope = np.array(slope)
 intercept = np.array(intercept)
 
@@ -16,17 +16,20 @@ left_done  = False
 right_done = False
 
 ## GPIO Config. ## 
-SOLENOID_IN = 11
-LEFT_CNTRL  = 13
-RIGHT_CTRL  = 15
+SOLENOID_IN = 26
+SOLENOID_OUT  = 27
+LEFT_CNTRL  = 22
+RIGHT_CNTRL = 23
 
-GPIO.setmode(GPIO.BOARD) # uses pin numbers
-GPIO.setup(SOLENOID_IN, GPIO.IN)
+GPIO.setmode(GPIO.BCM)
+GPIO.setup(SOLENOID_IN, GPIO.IN, pull_up_down=GPIO.PUD_UP)
+GPIO.setup(SOLENOID_OUT, GPIO.OUT)
 GPIO.setup(LEFT_CNTRL, GPIO.OUT)
 GPIO.setup(RIGHT_CNTRL, GPIO.OUT)
 
 GPIO.output(LEFT_CNTRL, GPIO.LOW)
 GPIO.output(RIGHT_CNTRL, GPIO.LOW)
+GPIO.output(SOLENOID_OUT, GPIO.HIGH)
 ####
 
 def crispiness_to_colour(crispiness):
@@ -111,7 +114,7 @@ while(True):
         if((time.time()-start_time)>150): #2.5 min until break (not forsure if this will stop the circuit may have to set gpio)
             break
 
-        # Quit with 'q'
+        Quit with 'q'
         if cv2.waitKey(1) & 0xFF == ord('q'):
             break
 
