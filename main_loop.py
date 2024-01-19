@@ -59,11 +59,12 @@ def toast_done_right():
     print("Right Done!")
 
 def eject():
+    GPIO.output(SOLENOID_OUT, GPIO.LOW)
     print("Ejected!")
 
 crispiness = float(sys.argv[1])
 
-if(not(crispiness>=0 and crispiness<=1)):
+if(not(0 <= crispiness <= 1)):
     print("Invalid crispiness.")
     exit()
 
