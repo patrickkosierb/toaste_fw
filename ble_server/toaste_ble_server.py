@@ -160,8 +160,7 @@ class UnitDescriptor(Descriptor):
         return value
 
 class TimerService(Service):
-    # Timer Service
-    TIMER_SERVICE_UUID = '0000ffe0-0000-1000-8000-00805f9b34fb'
+    TIMER_SERVICE_UUID = "00000011-710e-4a5b-8d75-3e5b444bc3cf"
 
     def __init__(self, index):
         Service.__init__(self, index, self.TIMER_SERVICE_UUID, True)
@@ -169,7 +168,7 @@ class TimerService(Service):
         self.add_characteristic(Cancel_Characteristic(self))
 
 class GetTimeCharacteristic(Characteristic):
-    GET_TIME_CHAR_UUID = '0000ffe1-0000-1000-8000-00805f9b34fb'
+    GET_TIME_CHAR_UUID = "00000012-710e-4a5b-8d75-3e5b444bc3cf"
 
     def __init__(self, service):
         self.notifying = False
@@ -218,7 +217,7 @@ class GetTimeCharacteristic(Characteristic):
         return value
 
 class Cancel_Characteristic(Characteristic):
-    CANCEL_CHAR_UUID = '0000ffe2-0000-1000-8000-00805f9b34fb'
+    CANCEL_CHAR_UUID = "00000013-710e-4a5b-8d75-3e5b444bc3cf"
 
     def __init__(self, service):
         Characteristic.__init__(
@@ -231,7 +230,7 @@ class Cancel_Characteristic(Characteristic):
         # TODO: Update toasting state to cancel! (ie: cancel toasting process!)
 
 class CrispinessService(Service):
-    CRISPINESS_SERVICE_UUID = '0000ffa0-0000-1000-8000-00805f9b34fb'
+    CRISPINESS_SERVICE_UUID = "00000023-710e-4a5b-8d75-3e5b444bc3cf"
 
     def __init__(self, index):
         self.target_crispiness = 0
@@ -245,7 +244,7 @@ class CrispinessService(Service):
         # TODO: set state to CONFIGURED
 
 class GetCurrentCrispCharacteristic(Characteristic):
-    CURRENT_CRISP_CHAR_UUID = '0000ffa2-0000-1000-8000-00805f9b34fb'
+    CURRENT_CRISP_CHAR_UUID = "00000021-710e-4a5b-8d75-3e5b444bc3cf"
 
     def __init__(self, service):
         self.crispiness = 0
@@ -295,7 +294,7 @@ class GetCurrentCrispCharacteristic(Characteristic):
     
 
 class SetTargetCrispCharacteristic(Characteristic):
-    TARGET_CRISP_CHAR_UUID = '0000ffa1-0000-1000-8000-00805f9b34fb'
+    TARGET_CRISP_CHAR_UUID = "00000022-710e-4a5b-8d75-3e5b444bc3cf"
 
     def __init__(self, service):
         Characteristic.__init__(
@@ -330,7 +329,7 @@ class TargetCrispiness_Descriptor(Descriptor):
     
 
 class StateService(Service):
-    STATE_SERVICE_UUID = '0000ffb0-0000-1000-8000-00805f9b34fb'
+    STATE_SERVICE_UUID = "00000032-710e-4a5b-8d75-3e5b444bc3cf"
 
     def __init__(self, index):
         self.state = State.IDLE # TODO: update this from main.py
@@ -339,7 +338,7 @@ class StateService(Service):
         self.add_characteristic(GetToasterStateCharacteristic(self))
 
 class GetToasterStateCharacteristic(Characteristic):
-    STATE_CHAR_UUID = '0000ffb1-0000-1000-8000-00805f9b34fb'
+    STATE_CHAR_UUID = "00000031-710e-4a5b-8d75-3e5b444bc3cf"
 
     def __init__(self, service):
         self.notifying = False
