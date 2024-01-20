@@ -384,6 +384,8 @@ class GetToasterStateCharacteristic(Characteristic):
         value = self.get_toaster_state()
         return value
 
+# TODO: notification service? 
+notification_payload = {'state': State.CONFIGURED, 'current_crispiness': 0.0, 'target_crispiness': 0.0, 'time_remaining': 0.0}
 
 
 # TODO: move to main.py
