@@ -303,8 +303,10 @@ class SetTargetCrispCharacteristic(Characteristic):
         self.add_descriptor(TargetCrispiness_Descriptor(self))
 
     def WriteValue(self, value, options):
-        print("Received Value: " + str(value))
-        val = float(value)
+        print("Received Target Crispiness Value: ")
+        data = [int(val) for val in value]
+        print(data)
+        val = data[0] # this is running an error :()
 
         self.service.set_target_crispiness(val)
 
@@ -334,7 +336,7 @@ class StateService(Service):
     def __init__(self, index):
         self.state = State.IDLE # TODO: update this from main.py
 
-        Service.__init__(self, index, self.CRISPINESS_SERVICE_UUID, True)
+        Service.__init__(self, index, self.STATE_SERVICE_UUID, True)
         self.add_characteristic(GetToasterStateCharacteristic(self))
 
 class GetToasterStateCharacteristic(Characteristic):
