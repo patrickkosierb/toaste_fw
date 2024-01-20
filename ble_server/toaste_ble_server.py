@@ -7,6 +7,17 @@ from advertisement import Advertisement
 from service import Application, Service, Characteristic, Descriptor
 from gpiozero import CPUTemperature
 
+import enum
+
+# move this to main file?
+class State(enum.Enum):
+    IDLE = 'IDLE'
+    CONFIGURED = 'CONFIGURED'
+    TOASTING = 'TOASTING'
+    DONE = 'DONE'
+    CANCELLED = 'CANCELLED'
+
+
 GATT_CHRC_IFACE = "org.bluez.GattCharacteristic1"
 NOTIFY_TIMEOUT = 5000
 
@@ -155,6 +166,7 @@ class TimerService(Service):
     def __init__(self, index):
         Service.__init__(self, index, self.TIMER_SERVICE_UUID, True)
         self.add_characteristic(GetTimeCharacteristic(self))
+        self.add_characteristic(Cancel_Characteristic(self))
 
 class GetTimeCharacteristic(Characteristic):
     GET_TIME_CHAR_UUID = '0000ffe1-0000-1000-8000-00805f9b34fb'
@@ -205,6 +217,19 @@ class GetTimeCharacteristic(Characteristic):
 
         return value
 
+class Cancel_Characteristic(Characteristic):
+    CANCEL_CHAR_UUID = '0000ffe2-0000-1000-8000-00805f9b34fb'
+
+    def __init__(self, service):
+        Characteristic.__init__(
+                self, self.CANCEL_CHAR_UUID,
+                ["write"], service)
+        
+    def WriteValue(self, value, options):
+        print("Received Value: " + str(value))
+
+        # TODO: Update toasting state to cancel! (ie: cancel toasting process!)
+
 class CrispinessService(Service):
     CRISPINESS_SERVICE_UUID = '0000ffa0-0000-1000-8000-00805f9b34fb'
 
@@ -217,6 +242,7 @@ class CrispinessService(Service):
 
     def set_target_crispiness(self, crispiness):
         self.target_crispiness = crispiness
+        # TODO: set state to CONFIGURED
 
 class GetCurrentCrispCharacteristic(Characteristic):
     CURRENT_CRISP_CHAR_UUID = '0000ffa2-0000-1000-8000-00805f9b34fb'
@@ -243,7 +269,6 @@ class GetCurrentCrispCharacteristic(Characteristic):
         return value
 
     def set_crispiness_callback(self):
-
         if self.notifying:
             value = self.get_current_crispiness()
             print("notification value: " + str(value))
@@ -265,10 +290,7 @@ class GetCurrentCrispCharacteristic(Characteristic):
         self.notifying = False
 
     def ReadValue(self, options):
-        print("ReadValue")
-
         value = self.get_current_crispiness()
-
         return value
     
 
@@ -305,14 +327,72 @@ class TargetCrispiness_Descriptor(Descriptor):
             value.append(dbus.Byte(c.encode()))
 
         return value
+    
+
+class StateService(Service):
+    STATE_SERVICE_UUID = '0000ffb0-0000-1000-8000-00805f9b34fb'
+
+    def __init__(self, index):
+        self.state = State.IDLE # TODO: update this from main.py
+
+        Service.__init__(self, index, self.CRISPINESS_SERVICE_UUID, True)
+        self.add_characteristic(GetToasterStateCharacteristic(self))
+
+class GetToasterStateCharacteristic(Characteristic):
+    STATE_CHAR_UUID = '0000ffb1-0000-1000-8000-00805f9b34fb'
+
+    def __init__(self, service):
+        self.notifying = False
+
+        Characteristic.__init__(
+                self, self.STATE_CHAR_UUID,
+                ["notify", "read"], service)
+        # self.add_descriptor(TempDescriptor(self))
+
+    def get_toaster_state(self):
+        value = []
+
+        state= self.service.state # TODO: update this from main.py
+
+        strtemp = str(state)
+        for c in strtemp:
+            value.append(dbus.Byte(c.encode()))
+
+        return value
+
+    def set_state_callback(self):
+        if self.notifying:
+            value = self.get_toaster_state()
+            self.PropertiesChanged(GATT_CHRC_IFACE, {"Value": value}, [])
+
+        return self.notifying
+
+    def StartNotify(self):
+        if self.notifying:
+            return
+
+        self.notifying = True
+
+        value = self.get_toaster_state()
+        self.PropertiesChanged(GATT_CHRC_IFACE, {"Value": value}, [])
+        self.add_timeout(NOTIFY_TIMEOUT, self.set_state_callback)
+
+    def StopNotify(self):
+        self.notifying = False
+
+    def ReadValue(self, options):
+        value = self.get_toaster_state()
+        return value
+
 
 
 # TODO: move to main.py
 
 app = Application()
-app.add_service(ThermometerService(0))
+app.add_service(ThermometerService(3))
+app.add_service(StateService(2))
 app.add_service(TimerService(1))
-app.add_service(CrispinessService(2))
+app.add_service(CrispinessService(0))
 app.register()
 
 adv = ToastE_Advertisement(0)
