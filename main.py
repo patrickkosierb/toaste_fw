@@ -46,6 +46,11 @@ def compare(state, color_current, blue, green, red, gpio_pin):
         return True 
     return state
 
+def control_task():
+    return 0
+
+def server_task():
+    return 0
 
 logging.basicConfig(level=logging.INFO,format="%(asctime)s [%(levelname)s] %(message)s",handlers=[logging.FileHandler("cntrl_log.log"),logging.StreamHandler()])
 
@@ -98,4 +103,5 @@ while(True):
             break
 
 GPIO.cleanup()
+
 
