@@ -320,5 +320,8 @@ adv.register()
 
 try:
     app.run()
+
+    # access the services and characteristics
+    print(app.GetManagedObjects())
 except KeyboardInterrupt:
     app.quit()
