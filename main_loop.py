@@ -1,19 +1,20 @@
-# import cv2
+import cv2
 import RPi.GPIO as GPIO
 import sys
+import os
 import time
 import numpy as np
 from parameters import slope, intercept
 
-Eventually these will just be hard coded
+MAX_TIME = 30
+
+# Eventually these will just be hard coded
 slope = np.array(slope)
 intercept = np.array(intercept)
 
-vid1 = cv2.VideoCapture(1)
-vid2 = cv2.VideoCapture(2)
-
 left_done  = False
 right_done = False
+
 
 ## GPIO Config. ## 
 SOLENOID_IN = 26
@@ -35,20 +36,11 @@ GPIO.output(SOLENOID_OUT, GPIO.HIGH)
 def crispiness_to_colour(crispiness):
     return np.multiply(crispiness, slope) + intercept
     
-def expand_colour_range(colour, tolerance = 10):
+def expand_colour_range(colour, tolerance = 20):
     ranges = []
     for i in range(3):
         ranges.append([colour[i] - tolerance, colour[i] + tolerance])
     return ranges
-
-def display_frame(frame1, frame2):
-    # Mirror the frame (it just looks better but we can remove this later)
-    frame1 = cv2.flip(frame1, 1)
-    frame2 = cv2.flip(frame2, 1)
-
-    # Display both frames side by side
-    frame = np.hstack((frame1, frame2))
-    cv2.imshow('frame', frame)
 
 def toast_done_left():
     GPIO.output(LEFT_CNTRL, GPIO.LOW)
@@ -66,6 +58,7 @@ crispiness = float(sys.argv[1])
 
 if(not(0 <= crispiness <= 1)):
     print("Invalid crispiness.")
+    GPIO.cleanup()
     exit()
 
 ranges = expand_colour_range(crispiness_to_colour(crispiness))
@@ -86,18 +79,16 @@ while(True):
         GPIO.output(LEFT_CNTRL, GPIO.HIGH)
         GPIO.output(RIGHT_CNTRL, GPIO.HIGH)
         time.sleep(0.5)
+
         # Capture the video frame by frame 
-        ret1, frame1 = vid1.read()
-        ret2, frame2 = vid2.read()
-
+        os.system('libcamera-still -t 100 -n -o test.jpg')
         # Get average colour of each frame
-        average1 = np.array(cv2.mean(frame1)[0:3])
-        average2 = np.array(cv2.mean(frame2)[0:3])
-
-        display_frame(frame1, frame2)
+        frame = cv2.imread("test.jpg")
+        average1 = np.array(cv2.mean(frame[0:1232, 0:1640])[0:3])
+        average2 = np.array(cv2.mean(frame[1232:2464, 0:1640])[0:3])
 
         # Print both averages
-        print("Left/Right:\t", average1, "/", average2, end='\r')
+        print("Left/Right:\t", average1, "/", average2, end='\r') #small left big right
 
         # Done if average colour is within a certain range
         if left_done == False and blue_range[0] < average1[0] < blue_range[1] and green_range[0] < average1[1] < green_range[1] and red_range[0] < average1[2] < red_range[1]:
@@ -112,14 +103,11 @@ while(True):
             eject()
             break
 
-        if((time.time()-start_time)>150): #2.5 min until break (not forsure if this will stop the circuit may have to set gpio)
+        if((time.time()-start_time)>MAX_TIME): #2.5 min until break (not forsure if this will stop the circuit may have to set gpio)
             break
 
-        Quit with 'q'
+        # Quit with 'q'
         if cv2.waitKey(1) & 0xFF == ord('q'):
             break
 
 GPIO.cleanup()
-vid1.release()
-vid2.release()
-cv2.destroyAllWindows()
