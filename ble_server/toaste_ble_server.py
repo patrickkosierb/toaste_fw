@@ -2,12 +2,12 @@
 
 import random
 import dbus
+import enum
 
-from advertisement import Advertisement
-from service import Application, Service, Characteristic, Descriptor
+from ble_server.advertisement import Advertisement
+from ble_server.service import Application, Service, Characteristic, Descriptor
 from gpiozero import CPUTemperature
 
-import enum
 
 # move this to main file?
 class State(enum.Enum):
