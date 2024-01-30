@@ -384,27 +384,3 @@ class GetToasterStateCharacteristic(Characteristic):
     def ReadValue(self, options):
         value = self.get_toaster_state()
         return value
-
-# TODO: notification service? 
-notification_payload = {'state': State.CONFIGURED, 'current_crispiness': 0.0, 'target_crispiness': 0.0, 'time_remaining': 0.0}
-
-
-# TODO: move to main.py
-
-app = Application()
-app.add_service(ThermometerService(3))
-app.add_service(StateService(2))
-app.add_service(TimerService(1))
-app.add_service(CrispinessService(0))
-app.register()
-
-adv = ToastE_Advertisement(0)
-adv.register()
-
-try:
-    app.run()
-
-    # access the services and characteristics
-    print(app.GetManagedObjects())
-except KeyboardInterrupt:
-    app.quit()
