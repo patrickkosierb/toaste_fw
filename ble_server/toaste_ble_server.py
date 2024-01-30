@@ -287,6 +287,7 @@ class GetCurrentCrispCharacteristic(Characteristic):
 
     def StopNotify(self):
         self.notifying = False
+        print("Stop Notify command received")
 
     def ReadValue(self, options):
         value = self.get_current_crispiness()
