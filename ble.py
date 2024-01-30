@@ -37,3 +37,7 @@ def main():
     # start the BLE reader
     reader_thread = threading.Thread(target=reader, args=(app,))
     reader_thread.start()
+
+
+if __name__ == "__main__":
+    main()
