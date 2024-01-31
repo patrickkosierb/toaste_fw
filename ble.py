@@ -1,6 +1,7 @@
 import threading
 import time
 from ble_server.toaste_ble_server import Application, ThermometerService, StateService, TimerService, CrispinessService, ToastE_Advertisement, State
+from ble_server.message_types import MessageTypes
 
 # TODO: notification service? 
 notification_payload = {'state': State.CONFIGURED, 'current_crispiness': 0.0, 'target_crispiness': 0.0, 'time_remaining': 0.0}
@@ -16,7 +17,10 @@ def start_ble(app):
 def reader(app):
     time.sleep(10)
     # access the services and characteristics
-    print(app.GetManagedObjects())
+    ble_objects = app.GetManagedObjects()
+    print(ble_objects)
+    res = list(ble_objects.keys())[0]
+    print(ble_objects[0])
 
 
 def main():

@@ -208,6 +208,7 @@ class GetTimeCharacteristic(Characteristic):
         self.add_timeout(NOTIFY_TIMEOUT, self.set_time_remaining_callback)
 
     def StopNotify(self):
+        print("Stop Notify command received for GetTimeCharacteristic")
         self.notifying = False
 
     def ReadValue(self, options):
@@ -225,7 +226,7 @@ class Cancel_Characteristic(Characteristic):
                 ["write"], service)
         
     def WriteValue(self, value, options):
-        print("Received Value: " + str(value))
+        print("Received Value: " + ''.join([str(v) for v in value]))
 
         # TODO: Update toasting state to cancel! (ie: cancel toasting process!)
 
@@ -287,7 +288,7 @@ class GetCurrentCrispCharacteristic(Characteristic):
 
     def StopNotify(self):
         self.notifying = False
-        print("Stop Notify command received")
+        print("Stop Notify command received for GetCurrentCrispCharacteristic")
 
     def ReadValue(self, options):
         value = self.get_current_crispiness()
