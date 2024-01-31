@@ -244,6 +244,9 @@ class CrispinessService(Service):
         self.target_crispiness = crispiness
         # TODO: set state to CONFIGURED
 
+    def get_target_crispiness(self):
+        return self.target_crispiness
+
 class GetCurrentCrispCharacteristic(Characteristic):
     CURRENT_CRISP_CHAR_UUID = "00000021-710e-4a5b-8d75-3e5b444bc3cf"
 
