@@ -15,12 +15,12 @@ def start_ble(app):
         app.quit()
 
 def reader(app):
-    time.sleep(10)
+    time.sleep(2)
     # access the services and characteristics
     ble_objects = app.GetManagedObjects()
     print(ble_objects)
     res = list(ble_objects.keys())[0]
-    print(ble_objects[0])
+    print(res)
 
 
 def main():
