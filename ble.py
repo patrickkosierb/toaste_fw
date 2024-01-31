@@ -20,7 +20,7 @@ def reader(app):
     ble_objects = app.GetManagedObjects()
     print(ble_objects)
     res = list(ble_objects.keys())[0]
-    print(res)
+    print('first', ble_objects[res])
 
 
 def main():
