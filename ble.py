@@ -15,20 +15,9 @@ def start_ble(app):
         app.quit()
 
 def reader(app, crisp):
-    time.sleep(2)
-    # access the services and characteristics
-    # ble_objects = app.GetManagedObjects()
-    # crisp_service = app.getService('name')
-    # print(ble_objects)
-    # res = list(ble_objects.keys())[0]
-    # print('\nfirst', ble_objects[res])
-    print(crisp.get_target_crispiness())
-
-    time.sleep(2)
-    print(crisp.get_target_crispiness())
-
-    time.sleep(2)
-    print(crisp.get_target_crispiness())
+    while(1):
+        time.sleep(2)
+        print(crisp.get_target_crispiness())
 
 
 
@@ -53,9 +42,6 @@ def main():
     # start the BLE reader
     reader_thread = threading.Thread(target=reader, args=(app,crisp))
     reader_thread.start()
-
-    crisp = CrispinessService(())
-    crisp.get()
 
 if __name__ == "__main__":
     main()
