@@ -4,7 +4,7 @@ import dbus
 import json
 
 from ble_server.advertisement import Advertisement
-from ble_server.service import Service, Characteristic, Descriptor
+from ble_server.service import Application, Service, Characteristic, Descriptor
 
 from ble_server.message_types import MessageTypes
 
