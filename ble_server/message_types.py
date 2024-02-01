@@ -1,6 +1,6 @@
-import enum
+from enum import IntFlag
 
-class MessageTypes(enum.Enum):
-    CANCEL = 0x00
+class MessageTypes(IntFlag):
     TARGET_CRISPINESS = 0x01
     READ_STATE = 0x02
+    CANCEL = 0x03

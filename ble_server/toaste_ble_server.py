@@ -29,7 +29,7 @@ class ToastE_Service(Service):
 
         # outgoing data
         self.crispiness = 0
-        self.time_remaining = 0 # seconds
+        self.time_remaining = None
         self.time_elapsed = 0 # seconds
         self.state = 'IDLE'
 
@@ -92,9 +92,6 @@ class ToastE_Characteristic(Characteristic):
         except Exception as e:
             print(e)
             raise e
-
-        print('characteristic: ', payload)
-        print('encoded_payload: ', payload_bytes)
         
         # encode in byte array
         value = []
@@ -133,20 +130,23 @@ class ToastE_Characteristic(Characteristic):
     
     def WriteValue(self, value, options):
         # TODO: extract command from value
-        command = MessageTypes.TARGET_CRISPINESS
+        print("WriteValue: " + str(value))
+        try:
+            command = int(value[0])
 
-        if command == MessageTypes.CANCEL:
-            print("Cancel command received")
-            self.service.set_cancel_flag(True)
-        elif command == MessageTypes.TARGET_CRISPINESS:
-            print("Received Target Crispiness Value: ")
-            data = [int(val) for val in value]
-            print(data)
-            val = data[0] # this is running an error :()
-            self.service.set_target_crispiness(val)
-        else:
-            print("Command not recognised")
-
+            if command == MessageTypes.CANCEL:
+                print("Cancel command received")
+                self.service.set_cancel_flag(True)
+            elif command == MessageTypes.TARGET_CRISPINESS:
+                print("Received Target Crispiness Value: ")
+                data = [int(val) for val in value[1:]]
+                print(data)
+                self.service.set_target_crispiness(data[0])
+                # self.service.set_target_crispiness(int(value[1]))
+            else:
+                print("Command not recognised")
+        except Exception as e:
+            print(e)
 
 class ToastE_Descriptor(Descriptor):
     DESCRIPTOR_UUID = "1313"

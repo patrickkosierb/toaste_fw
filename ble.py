@@ -49,10 +49,10 @@ def reader(ble_service):
             elif (target and crispiness >= target):
                 state = State.DONE
             elif (target and target > 0):
-                state = State.TOASTING
+                state = State.TOASTING # TODO: this is controlled in main loop
                 time_elapsed_sec += 1
-                time_remaining_sec -= 1
-                crispiness += 0.1*time_elapsed_sec
+                time_remaining_sec -= 2 # TODO: temp for testing
+                crispiness += 0.1*time_elapsed_sec # TODO: temp for testing
             elif (target): 
                 state = State.CONFIGURED
             else:
