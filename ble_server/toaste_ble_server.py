@@ -10,7 +10,7 @@ from ble_server.message_types import MessageTypes
 
 
 GATT_CHRC_IFACE = "org.bluez.GattCharacteristic1"
-NOTIFY_TIMEOUT = 5000
+NOTIFY_TIMEOUT = 1000
 
 class ToastE_Advertisement(Advertisement):
     def __init__(self, index):
@@ -41,6 +41,8 @@ class ToastE_Service(Service):
 
     def set_cancel_flag(self, cancel: bool):
         self.cancel_flag = cancel
+        # Temp for now:
+        self.set_target_crispiness(None)
 
     def get_current_crispiness(self):
         return self.crispiness

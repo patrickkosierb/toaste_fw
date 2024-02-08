@@ -4,6 +4,7 @@ import time
 from ble_server.toaste_ble_server import Application, ToastE_Service, ToastE_Advertisement
 from ble_server.message_types import MessageTypes
 
+# TODO: queues for data transfer between threads
 
 class State(str, enum.Enum):
     IDLE = 'IDLE'
@@ -41,6 +42,7 @@ def reader(ble_service):
                 # TODO: remove this 
                 # temp reset
                 crispiness = 0
+                target = None
                 time_remaining_sec = 200
                 time_elapsed_sec = 0
                 state = State.IDLE
@@ -52,7 +54,8 @@ def reader(ble_service):
                 state = State.TOASTING # TODO: this is controlled in main loop
                 time_elapsed_sec += 1
                 time_remaining_sec -= 2 # TODO: temp for testing
-                crispiness += 0.1*time_elapsed_sec # TODO: temp for testing
+                crispiness += 0.05*time_elapsed_sec # TODO: temp for testing
+                crispiness = round(crispiness)
             elif (target): 
                 state = State.CONFIGURED
             else:
