@@ -7,7 +7,7 @@ import numpy as np
 from parameters import slope, intercept
 
 MAX_TIME = 30
-
+T_SAMPLE = 10
 # Eventually these will just be hard coded
 slope = np.array(slope)
 intercept = np.array(intercept)
@@ -66,7 +66,7 @@ blue_range, green_range, red_range = ranges[0], ranges[1], ranges[2]
 print("Target:\t\t", crispiness_to_colour(crispiness))
 
 start_ctrl = 1
-start_time = 0
+start_time,dt = 0
 
 while(True): 
 
@@ -80,30 +80,32 @@ while(True):
         GPIO.output(RIGHT_CNTRL, GPIO.HIGH)
         time.sleep(0.5)
 
-        # Capture the video frame by frame 
-        os.system('libcamera-still -t 100 -n -o test.jpg')
-        # Get average colour of each frame
-        frame = cv2.imread("test.jpg")
-        average1 = np.array(cv2.mean(frame[0:1232, 0:1640])[0:3])
-        average2 = np.array(cv2.mean(frame[1232:2464, 0:1640])[0:3])
 
-        # Print both averages
-        print("Left/Right:\t", average1, "/", average2, end='\r') #small left big right
+        if not(dt%T_SAMPLE):
+            # Capture the video frame by frame 
+            os.system('libcamera-still -t 100 -n -o test.jpg')
+            # Get average colour of each frame
+            frame = cv2.imread("test.jpg")
+            average1 = np.array(cv2.mean(frame[0:1232, 0:1640])[0:3])
+            average2 = np.array(cv2.mean(frame[1232:2464, 0:1640])[0:3])
 
-        # Done if average colour is within a certain range
-        if left_done == False and blue_range[0] < average1[0] < blue_range[1] and green_range[0] < average1[1] < green_range[1] and red_range[0] < average1[2] < red_range[1]:
-            left_done = True
-            toast_done_left()
-        
-        if right_done == False and blue_range[0] < average2[0] < blue_range[1] and green_range[0] < average2[1] < green_range[1] and red_range[0] < average2[2] < red_range[1]:
-            right_done = True
-            toast_done_right()
+            # Print both averages
+            print("Left/Right:\t", average1, "/", average2, end='\r') #small left big right
 
-        if left_done and right_done:
-            eject()
-            break
+            # Done if average colour is within a certain range
+            if left_done == False and blue_range[0] < average1[0] < blue_range[1] and green_range[0] < average1[1] < green_range[1] and red_range[0] < average1[2] < red_range[1]:
+                left_done = True
+                toast_done_left()
+            
+            if right_done == False and blue_range[0] < average2[0] < blue_range[1] and green_range[0] < average2[1] < green_range[1] and red_range[0] < average2[2] < red_range[1]:
+                right_done = True
+                toast_done_right()
 
-        if((time.time()-start_time)>MAX_TIME): #2.5 min until break (not forsure if this will stop the circuit may have to set gpio)
+            if left_done and right_done:
+                eject()
+                break
+
+        if(dt=(time.time()-start_time)>MAX_TIME): #2.5 min until break (not forsure if this will stop the circuit may have to set gpio)
             break
 
         # Quit with 'q'
