@@ -1,5 +1,8 @@
 import paho.mqtt.client as mqtt
 
+# to start broker
+# sudo mosquitto -c /etc/mosquitto/mosquitto.conf
+
 MQTT_ADDRESS = '172.20.10.4'
 MQTT_USER = 'pi'
 MQTT_PASSWORD = 'toast'
