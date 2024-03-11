@@ -2,14 +2,14 @@ import paho.mqtt.client as mqtt
 from PIL import Image
 import io
 import base64
-
+import time
 # to start broker
 # sudo mosquitto -c /etc/mosquitto/mosquitto.conf
 
 MQTT_ADDRESS = '172.20.10.4'
 MQTT_USER = 'pi'
 MQTT_PASSWORD = 'toast'
-MQTT_TOPIC = 'new2'
+MQTT_TOPIC = 'left'
 
 frame = []
 count = 0
@@ -27,16 +27,21 @@ def on_message(client, userdata, msg):
     global count
     global start
     pix = msg.payload.decode('utf-8')
+    print(msg.payload)
     if(pix == "ACK" ):
+        start = time.time()
         frame = []
         print("caputre start")
     elif(pix == "FIN"):
+        
         print("caputre done")
         intf = [int(x) for x in frame]
         intf = bytes(intf)
         img = Image.open(io.BytesIO(intf))
         img.save("capture"+str(count)+".jpg")
+        end = time.time()
         count+=1
+        print(start-end)
     else:
         frame.append(pix)
 
