@@ -1,4 +1,5 @@
 import paho.mqtt.client as mqtt
+import sys
 
 MQTT_ADDRESS = '172.20.10.4'
 MQTT_USER = 'pi'
@@ -8,7 +9,7 @@ MQTT_TOPIC_START = 'start'
 
 if __name__ == '__main__':
 
-    cntrl = '0'
+    cntrl = sys.argv[1]
 
     client_id = "pipub2"
     mqtt_client = mqtt.Client(mqtt.CallbackAPIVersion.VERSION1, client_id)
