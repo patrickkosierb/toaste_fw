@@ -1,8 +1,5 @@
 import RPi.GPIO as GPIO
 import time 
-import signal
-
-# GPIO.cleanup()
 
 ## GPIO Config. ## 
 SOLENOID_IN = 26
@@ -19,10 +16,6 @@ GPIO.setup(SOLENOID_OUT, GPIO.OUT)
 GPIO.setup(LEFT_CNTRL, GPIO.OUT)
 GPIO.setup(RIGHT_CNTRL, GPIO.OUT)
 
-def signal_handle(sig, frame):
-    print(sig)
-
-
 def abort(channel):
     print("Abort Initialized")
     GPIO.output(LEFT_CNTRL, GPIO.LOW)
@@ -33,10 +26,8 @@ def abort(channel):
 
 if __name__ == '__main__':
     GPIO.add_event_detect(ABORT_IN, GPIO.FALLING, callback=abort, bouncetime=100)
-    signal.signal(signal.SIGINT,signal_handle)
 
     while 1:
-
         if not(GPIO.input(SOLENOID_IN)):
             GPIO.output(LEFT_CNTRL, GPIO.HIGH)
             GPIO.output(RIGHT_CNTRL, GPIO.HIGH)
@@ -45,6 +36,5 @@ if __name__ == '__main__':
             GPIO.output(LEFT_CNTRL, GPIO.LOW)
             GPIO.output(RIGHT_CNTRL, GPIO.LOW)
             GPIO.output(SOLENOID_OUT, GPIO.LOW)
-
-        
+   
     GPIO.cleanup()
