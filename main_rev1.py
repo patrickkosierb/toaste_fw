@@ -20,7 +20,7 @@ RIGHT_CNTRL = 23
 MQTT_ADDRESS = '172.20.10.4'
 MQTT_USER = 'pi'
 MQTT_PASSWORD = 'toast'
-MQTT_TOPIC_START = 'start'
+MQTT_TOPIC_PICTURE = 'picture'
 
 ## OTHER ## 
 MAX_TIME = 300
@@ -106,6 +106,7 @@ if __name__ == '__main__':
     start_ctrl = 1
     start_time, dt = 0, 0
 
+    captureCount = len(os.listdir("/espData"))
     while(True): 
         # Have BLE Waiting for crispiness here once we test this 
 
@@ -122,11 +123,13 @@ if __name__ == '__main__':
             if not(dt % T_SAMPLE):
                 
                 heaters(GPIO.LOW)
-                
-                mqtt_client.publish(MQTT_TOPIC_START,1); 
-                time.sleep(2)
-                frame = cv2.imread((os.listdir("/espData")[-1]))
+    
+                mqtt_client.publish(MQTT_TOPIC_PICTURE,1); 
+                time.sleep(0.5)
+
                 heaters(GPIO.HIGH)
+                frame = cv2.imread((os.listdir("/espData")[-1]))
+                
                 
                 left_avg = np.array(cv2.mean(frame)[0:3])
                 
