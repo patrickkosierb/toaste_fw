@@ -65,7 +65,7 @@ def signal_handler(sig, frame):
     GPIO.cleanup()
     exit()
 
-def abort(channel):
+def abort_button(channel):
     print("Abort Initialized")
     eject()
     GPIO.cleanup()
@@ -84,7 +84,7 @@ def setup():
     GPIO.output(RIGHT_CNTRL, GPIO.LOW)
     GPIO.output(SOLENOID_OUT, GPIO.HIGH)
 
-    GPIO.add_event_detect(ABORT_IN, GPIO.FALLING, callback=abort, bouncetime=100)
+    GPIO.add_event_detect(ABORT_IN, GPIO.FALLING, callback=abort_button, bouncetime=100)
     signal.signal(signal.SIGINT, signal_handler)
 
     mqtt()
