@@ -10,7 +10,6 @@ import paho.mqtt.client as mqtt
 import sys
 import threading
 import ble
-import datetime
 
 cwd = os.getcwd()
 ## GPIO MACROS ## 
@@ -28,7 +27,7 @@ MQTT_TOPIC_PICTURE = 'picture'
 MQTT_TOPIC = 'testing'
 
 ## OTHER ## 
-MAX_TIME = 180  
+MAX_TIME = 120  
 T_SAMPLE = 10
 ERROR_BOUND = 5
 slope = np.array(slope)
@@ -56,13 +55,11 @@ def heaters(trigger):
     GPIO.output(RIGHT_CNTRL, trigger)
 
 def eject():
-    global pic_count
     heaters(GPIO.LOW)
     GPIO.output(SOLENOID_OUT, GPIO.LOW)
     print("Ejected!")
     left_done = False
     right_done = False
-    pic_count = 0
     buff = []
 
 
@@ -89,9 +86,7 @@ def process_message(client, userdata, msg):
     global pic_count 
     print("Received picture: ", pic_count)
     buff.append(msg.payload)
-    # time = datetime.datetime.now()
-    time = datetime.datetime.now().strftime("%m:%d:%Y,%H:%M:%S")
-    with open("espData/"+time+"-"+"pic"+str(pic_count)+".jpg", "wb") as f:
+    with open("espData/"+str(pic_count)+".jpg", "wb") as f:
         f.write(msg.payload)
         pic_count+=1
         f.close()
@@ -103,7 +98,7 @@ def mqtt_task(client):
 def gpio_setup():
     GPIO.setmode(GPIO.BCM)
     GPIO.setup(SOLENOID_IN, GPIO.IN, pull_up_down=GPIO.PUD_UP)
-    GPIO.setup(ABORT_IN, GPIO.IN,pull_up_down=GPIO.PUD_UP)
+    GPIO.setup(ABORT_IN, GPIO.IN)
     GPIO.setup(SOLENOID_OUT, GPIO.OUT)
     GPIO.setup(LEFT_CNTRL, GPIO.OUT)
     GPIO.setup(RIGHT_CNTRL, GPIO.OUT)
@@ -128,22 +123,35 @@ if __name__ == '__main__':
     mqtt_client.connect(MQTT_ADDRESS, 1883)
 
     # BLE Startup
-    app = ble.Application()
-    ble_service = ble.ToastE_Service(0)
-    app.add_service(ble_service)
-    app.register()
-    adv = ble.ToastE_Advertisement(0)
-    adv.register()
+    # app = ble.Application()
+    # ble_service = ble.ToastE_Service(0)
+    # app.add_service(ble_service)
+    # app.register()
+    # adv = ble.ToastE_Advertisement(0)
+    # adv.register()
 
-    reader_thread = threading.Thread(target=ble.reader, args=(ble_service,))
-    ble_thread = threading.Thread(target=ble.start_ble, args=(app,))
+    # reader_thread = threading.Thread(target=ble.reader, args=(ble_service,))
+    # ble_thread = threading.Thread(target=ble.start_ble, args=(app,))
     mqtt_thread = threading.Thread(target=mqtt_task, args=(mqtt_client,))
 
     mqtt_thread.start()
-    ble_thread.start()
-    reader_thread.start()
+    # ble_thread.start()
+    # reader_thread.start()
 
-    ble_service.set_state(ble.State.IDLE)
+    # ble_service.set_state(ble.State.IDLE)
+
+    crispiness = float(sys.argv[1])
+
+
+    if(not(0 <= crispiness <= 1)):
+        print("Invalid crispiness.")
+        GPIO.cleanup()
+        exit()
+
+    # target = crispiness_to_colour(crispiness)
+    # ranges = expand_colour_range(target)
+    # blue_range, green_range, red_range = ranges[0], ranges[1], ranges[2]
+    # print("Target:\t\t", crispiness_to_colour(crispiness))
 
     while(1): # multi cycle while loop
 
@@ -152,12 +160,12 @@ if __name__ == '__main__':
             time.sleep(0.1)
 
         GPIO.output(SOLENOID_OUT, GPIO.HIGH)
-        time.sleep(0.1)
+        
         #TODO: take base picture 
         print("Slider down")
+
         if(GPIO.input(SOLENOID_IN)):
             abort_butt = True
-        
         
         # while(not ble_service.get_target_crispiness() and not abort_butt):
         #     time.sleep(0.1)
@@ -169,33 +177,27 @@ if __name__ == '__main__':
         # while(dtCrisp<=5 and not abort_butt):
         #     dtCrisp = int(np.round(time.time()-startCrisp))
         #     cur = ble_service.get_target_crispiness()
-        #     print(cur)
-        #     # print("dt: "+str(dtCrisp)+" dcrisp:"+ str(abs(cur-pastC)))
-                        
-        #     if((cur-pastC)<=5 or (cur-pastC)>=5):
-        #         startCrisp = time.time()
-        #         dtCrisp = int(np.round(time.time()-startCrisp))
-        #         pastC = cur
-
-        #     time.sleep(0.5)
             
+        #     if((abs(cur-pastC)>=5)):
+        #         startCrisp = time.time()
+        #         pastC = cur
+        #     time.sleep(1)
 
-        ble_service.set_state(ble.State.TOASTING)
-        dt = 0
+        # ble_service.set_state(ble.State.TOASTING)
+
         if(not abort_butt):
             # crispiness = ble_service.get_target_crispiness()/100
-            # print("Crispiness input"+str(crispiness))
-            crispiness = 0.5
+            print("Crispiness input"+str(crispiness))
             target = crispiness_to_colour(crispiness)
             print("Target:\t\t", target)
 
             start_ctrl = 1
+            dt = 0
             start_time = time.time()
             heaters(GPIO.HIGH)
             time.sleep(0.5)
             cur_pic = 0
-
-            ble_service.set_state(ble.State.TOASTING)
+            # ble_service.set_state(ble.State.TOASTING)
 
         while(dt<MAX_TIME and not (left_done and right_done) and not abort_butt):
 
@@ -225,6 +227,6 @@ if __name__ == '__main__':
             time.sleep(1) 
 
         eject()
-        ble_service.set_state(ble.State.IDLE)  
+        # ble_service.set_state(ble.State.IDLE)  
         time.sleep(2)
     GPIO.cleanup()

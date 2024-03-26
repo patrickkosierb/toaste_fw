@@ -12,8 +12,7 @@ sudo mosquitto -c /etc/mosquitto/mosquitto.conf &
 
 sleep 2
 
-python3 get_frame3.py &
-python3 test2.py #change this to main_loop.py
+python3 main_rev1v3.py
 
 wait -n
 

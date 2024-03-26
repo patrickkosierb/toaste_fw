@@ -4,7 +4,7 @@ import sys
 MQTT_ADDRESS = '172.20.10.4'
 MQTT_USER = 'pi'
 MQTT_PASSWORD = 'toast'
-MQTT_TOPIC_START = 'start'
+MQTT_TOPIC_START = 'picture'
 
 
 if __name__ == '__main__':
