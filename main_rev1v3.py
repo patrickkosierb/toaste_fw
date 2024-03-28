@@ -11,6 +11,7 @@ import sys
 import threading
 import ble
 import datetime
+from i2ctest import TCAM
 
 cwd = os.getcwd()
 ## GPIO MACROS ## 
@@ -19,13 +20,6 @@ ABORT_IN = 24
 SOLENOID_OUT  = 27
 LEFT_CNTRL  = 22
 RIGHT_CNTRL = 23
- 
-## MQTT MACROS ## 
-MQTT_ADDRESS = '172.20.10.4'
-MQTT_USER = 'pi'
-MQTT_PASSWORD = 'toast'
-MQTT_TOPIC_PICTURE = 'picture'
-MQTT_TOPIC = 'testing'
 
 ## OTHER ## 
 MAX_TIME = 180  
@@ -36,7 +30,7 @@ intercept = np.array(intercept)
 
 left_done  = False
 right_done = False
-
+cam1=None
 pic_count = 1
 buff = []
 abort_butt = False
@@ -81,24 +75,6 @@ def abort_button(channel):
     # GPIO.cleanup()
     # exit()
 
-def process_connect(client, userdata, flags, rc):
-    print('Connected with result code ' + str(rc))
-    client.subscribe(MQTT_TOPIC)
-
-def process_message(client, userdata, msg):
-    global pic_count 
-    print("Received picture: ", pic_count)
-    buff.append(msg.payload)
-    # time = datetime.datetime.now()
-    time = datetime.datetime.now().strftime("%m:%d:%Y,%H:%M:%S")
-    with open("espData/"+time+"-"+"pic"+str(pic_count)+".jpg", "wb") as f:
-        f.write(msg.payload)
-        pic_count+=1
-        f.close()
-
-def mqtt_task(client):
-    client.loop_forever() 
-
 ## SETUP ##
 def gpio_setup():
     GPIO.setmode(GPIO.BCM)
@@ -118,15 +94,6 @@ if __name__ == '__main__':
     
     gpio_setup()
 
-    # MQTT Startup
-    client_id = "process"
-    mqtt_client = mqtt.Client(mqtt.CallbackAPIVersion.VERSION1, client_id)
-    mqtt_client.username_pw_set(MQTT_USER, MQTT_PASSWORD)
-    mqtt_client.on_connect = process_connect
-    mqtt_client.on_message = process_message
-    mqtt_client.max_packet_size = 20000
-    mqtt_client.connect(MQTT_ADDRESS, 1883)
-
     # BLE Startup
     app = ble.Application()
     ble_service = ble.ToastE_Service(0)
@@ -137,13 +104,15 @@ if __name__ == '__main__':
 
     reader_thread = threading.Thread(target=ble.reader, args=(ble_service,))
     ble_thread = threading.Thread(target=ble.start_ble, args=(app,))
-    mqtt_thread = threading.Thread(target=mqtt_task, args=(mqtt_client,))
 
-    mqtt_thread.start()
     ble_thread.start()
     reader_thread.start()
 
     ble_service.set_state(ble.State.IDLE)
+
+    cam1 = TCAM.begin(0x55)#address of first esp unfortunatly hardcoded
+    cam1.begin()
+
 
     while(1): # multi cycle while loop
 
@@ -204,9 +173,14 @@ if __name__ == '__main__':
             if not(dt%T_SAMPLE): #take picture
                 heaters(GPIO.LOW)
                 time.sleep(0.5)
-                mqtt_client.publish(MQTT_TOPIC_PICTURE,1)
+                cam1.requestPhoto()
                 heaters(GPIO.HIGH)
+                cam1.getPhoto()
+                buff.append(cam1.getCurrentBuff())
+                cam1.saveCurrentBuff()
                 # time.sleep(3) 
+                time = datetime.datetime.now().strftime("%m:%d:%Y,%H:%M:%S")
+		        
 
             buff_len = len(buff)
 

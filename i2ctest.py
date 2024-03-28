@@ -9,15 +9,14 @@ import os
 
 class TCAM:
 	
+
 	def __init__(self, address=0x55):
 		self._picLen = 65538
 		self._address = address
 		self._state = True
 		self._readMsg = None #= #i2c_msg.read(self._address,self._picLen)
 		self._buff  = []
-		
-
-
+  	
 	def begin(self):
 		# Open I2C bus
 		self._bus = SMBus(1,force=True)
@@ -74,8 +73,6 @@ class TCAM:
 		except:
 			return False
 			
-		
-	
 	def requestPhoto(self):
 		self._buff=[]
 		data = bytes('r', 'utf-8')
@@ -84,12 +81,14 @@ class TCAM:
 			self._bus.i2c_rdwr(write)
 		except:
 			return False
-			
 		time.sleep(0.1)
+		return True
+
+	def getPhoto(self):
 		self._readMsg = i2c_msg.read(self._address,4)
 		try:
 			self._bus.i2c_rdwr(self._readMsg)
-			time.sleep(0.01);
+			time.sleep(0.01)
 		except:
 			return False
 		block =[]
@@ -98,11 +97,10 @@ class TCAM:
 		testv = int.from_bytes(bytearray(block[0:3]),"little")
 		print("i2count "+str(testv))
 		
-		
 		self._readMsg = i2c_msg.read(self._address,12)
 		try:
 			self._bus.i2c_rdwr(self._readMsg)
-			time.sleep(0.01);
+			time.sleep(0.01)
 		except:
 			return False
 		block= self._readMsg.buf[0:3]
@@ -115,24 +113,25 @@ class TCAM:
 			self._readMsg = i2c_msg.read(self._address,32)
 			try:
 				self._bus.i2c_rdwr(self._readMsg)
-				time.sleep(0.001);
+				time.sleep(0.001)
 				self._buff.extend(list(self._readMsg))
 			except:
 				return False
 		return True
-			
-		
+
 	def getCurrentBuff(self):
-		print(self._buff)
+		return self._buff
+		
+	def saveCurrentBuff(self):
 		time = datetime.datetime.now().strftime("%m:%d:%Y,%H:%M:%S")
-		with open(""+time+"-"+"pic"+str(22)+".jpg", "wb") as f:
+		with open("storedPics/"+time+"-"+"pic"+str(22)+".jpg", "wb") as f:
 			f.write(bytearray(self._buff[0:self._picLen]))
-			f.close()
+			f.close()	
 	
 	
 
 cam1 = TCAM(0x55)
 cam1.begin()
-time.sleep(1);
+time.sleep(1)
 cam1.requestPhoto()
 cam1.getCurrentBuff()
