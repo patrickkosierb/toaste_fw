@@ -82,7 +82,7 @@ if __name__ == "__main__":
     num_epochs = 10
 
     # Load data
-    dataPath = os.getcwd()+"/data_label/"
+    dataPath = os.getcwd()+"/learning/data_label/"
     train_dataset = CrispDataset(data_dir=dataPath, transform=transform)
     train_loader = DataLoader(train_dataset, batch_size=batch_size, shuffle=True)
 
@@ -93,7 +93,7 @@ if __name__ == "__main__":
 
     # Load model if already exists
     try: 
-        checkpoint = torch.load(os.getcwd()+'/crisp_classifier.pth')
+        checkpoint = torch.load(os.getcwd()+'/learning/crisp_classifier.pth')
         model.load_state_dict(checkpoint['model_state_dict'])
         optimizer.load_state_dict(checkpoint['optimizer_state_dict'])
         print("Loaded model")   

@@ -12,7 +12,7 @@ import ble
 import datetime
 import torch
 from i2ctest import TCAM
-from learning import crisp_net
+from crisp_net import CrispClassifier
 
 cwd = os.getcwd()
 
@@ -115,7 +115,7 @@ if __name__ == '__main__':
     cam1.begin()
 
     # load trained model
-    model = crisp_net.CrispClassifier()
+    model = CrispClassifier()
     load_model = torch.load(os.getcwd()+'/learning/crisp_classifier.pth')
     model.load_state_dict(load_model['model_state_dict'])
     model.eval()
