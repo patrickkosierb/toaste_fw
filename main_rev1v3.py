@@ -6,14 +6,15 @@ import time
 import numpy as np
 import signal
 from parameters import slope, intercept
-import paho.mqtt.client as mqtt
 import sys
 import threading
 import ble
 import datetime
 from i2ctest import TCAM
+from learning import crisp_net
 
 cwd = os.getcwd()
+
 ## GPIO MACROS ## 
 SOLENOID_IN = 26
 ABORT_IN = 24
@@ -59,7 +60,6 @@ def eject():
     pic_count = 0
     buff = []
 
-
 ## ABORT CALLBACKS ##
 def signal_handler(sig, frame):
     print('SIGINT received. Exiting gracefully.')
@@ -104,16 +104,21 @@ if __name__ == '__main__':
 
     reader_thread = threading.Thread(target=ble.reader, args=(ble_service,))
     ble_thread = threading.Thread(target=ble.start_ble, args=(app,))
-
+    
     ble_thread.start()
     reader_thread.start()
-
     ble_service.set_state(ble.State.IDLE)
 
-    cam1 = TCAM.begin(0x55)#address of first esp unfortunatly hardcoded
+    # camera config
+    cam1 = TCAM(0x55)#address of first esp unfortunatly hardcoded
     cam1.begin()
 
-
+    # load trained model
+    model = crisp_net.CrispClassifier()
+    load_model = torch.load(os.getcwd()+'/learning/crisp_classifier.pth')
+    model.load_state_dict(load_model['model_state_dict'])
+    model.eval()
+    
     while(1): # multi cycle while loop
 
         abort_butt = False
@@ -127,14 +132,13 @@ if __name__ == '__main__':
         if(GPIO.input(SOLENOID_IN)):
             abort_butt = True
         
-        
+        #TODO: fix ble
         # while(not ble_service.get_target_crispiness() and not abort_butt):
         #     time.sleep(0.1)
         
         # dtCrisp = 0
         # startCrisp = time.time()
         # pastC = ble_service.get_target_crispiness()
-
         # while(dtCrisp<=5 and not abort_butt):
         #     dtCrisp = int(np.round(time.time()-startCrisp))
         #     cur = ble_service.get_target_crispiness()
@@ -147,14 +151,13 @@ if __name__ == '__main__':
         #         pastC = cur
 
         #     time.sleep(0.5)
-            
-
+        
         ble_service.set_state(ble.State.TOASTING)
         dt = 0
         if(not abort_butt):
             # crispiness = ble_service.get_target_crispiness()/100
             # print("Crispiness input"+str(crispiness))
-            crispiness = 0.5
+            crispiness = 0.5 #hard coded for now
             target = crispiness_to_colour(crispiness)
             print("Target:\t\t", target)
 
@@ -179,8 +182,7 @@ if __name__ == '__main__':
                 buff.append(cam1.getCurrentBuff())
                 cam1.saveCurrentBuff()
                 # time.sleep(3) 
-                time = datetime.datetime.now().strftime("%m:%d:%Y,%H:%M:%S")
-		        
+                # time = datetime.datetime.now().strftime("%m:%d:%Y,%H:%M:%S")
 
             buff_len = len(buff)
 
@@ -189,10 +191,19 @@ if __name__ == '__main__':
                 img_np = cv2.imdecode(nparr, cv2.IMREAD_COLOR) # cv2.IMREAD_COLOR in OpenCV 3.1
                 left_avg = np.array(cv2.mean(img_np)[0:3])
 
-                print( "Left:\t", left_avg, "\n") 
+                # TODO:(replace 192) convert byte array to PIL for CNN input once implemented delete lls related
+                # c1_img_np = nparr.reshape((height, width, 3))
+                # c1_img = Image.fromarray(img_np)
+                # c1_cur_crispiness = model.predictCrispiness(c1_img)
+                # if(c1_cur_crispiness>=target):
+                    # c1_done = True
+                #######################
+
+                # print( "Left:\t", left_avg, "\n") 
                 # left_done = compare(left_done, left_avg, target, ERROR_BOUND, LEFT_CNTRL)
                 # right_done = left_done
                 # right_done = compare(right_done, right_avg, target, ERROR_BOUND, RIGHT_CNTRL)
+                
                 cur_pic = buff_len
                 print("Picture read: "+str(dt)+" Buffer length: "+str(buff_len))
             
