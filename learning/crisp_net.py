@@ -23,32 +23,32 @@ class CrispClassifier(nn.Module):
         x = self.sigmoid(self.fc2(x))
         return x
 
-# Initialize the model
-model = CrispClassifier()
+if __name__ == "__main__":
 
-# Load the trained model state dict
-model.load_state_dict(torch.load('crisp_classifier.pth'))
+    model = CrispClassifier()
+    # Load the trained model state dict
+    model.load_state_dict(torch.load('crisp_classifier.pth'))
 
-# Set the model to evaluation mode
-model.eval()
+    # Set the model to evaluation mode
+    model.eval()
 
-# Define transforms for data preprocessing (make sure these match the transforms used during training)
-transform = transforms.Compose([
-    transforms.Resize((224, 224)),
-    transforms.ToTensor(),
-    transforms.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225])  # Using ImageNet normalization
-])
+    # Define transforms for data preprocessing (make sure these match the transforms used during training)
+    transform = transforms.Compose([
+        transforms.Resize((224, 224)),
+        transforms.ToTensor(),
+        transforms.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225])  # Using ImageNet normalization
+    ])
 
-# Load and preprocess the new image
-image = Image.open(os.getcwd()+'/blank-64.jpg').convert('RGB')
-image = transform(image).unsqueeze(0)  # Add batch dimension
+    # Load image for prediction
+    image = Image.open(os.getcwd()+'/data_label/crisp-82.jpg').convert('RGB')
+    image = transform(image).unsqueeze(0)  # Add batch dimension
 
-# Make prediction
-with torch.no_grad():
-    output = model(image)
+    # Make prediction
+    with torch.no_grad():
+        output = model(image)
 
-# Convert the output to a probability score
-crispiness = output.item()
+    # Convert the output to a probability score
+    crispiness = output.item()
 
-# You can then use the probability score for further analysis or decision making
-print("Predicted Crispiness:", crispiness)
+    # You can then use the probability score for further analysis or decision making
+    print("Predicted Crispiness:", crispiness)

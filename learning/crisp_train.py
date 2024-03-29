@@ -53,6 +53,7 @@ class CrispDataset(Dataset):
         label = int(temp)/100
 
         return image, torch.tensor(label, dtype=torch.float32)
+
 if __name__ == "__main__":
 
     # Set device
@@ -66,45 +67,56 @@ if __name__ == "__main__":
     ])
 
     # Define hyperparameters
-    batch_size = 25
+    batch_size = 4 #depends on how much training data
     learning_rate = 0.001
     num_epochs = 10
 
-    dataPath = os.getcwd()+"/fakeData/"
 
     # Load data
+    dataPath = os.getcwd()+"/data_label/"
     train_dataset = CrispDataset(data_dir=dataPath, transform=transform)
     train_loader = DataLoader(train_dataset, batch_size=batch_size, shuffle=True)
 
-    # Initialize model
+    # Model + optimizer
     model = CrispClassifier().to(device)
-
-    # Define loss function and optimizer
     criterion = nn.BCELoss()
     optimizer = optim.Adam(model.parameters(), lr=learning_rate)
+
+    # load model if exists
+    try 
+        checkpoint = torch.load(os.getcwd()+'/crisp_classifier.pth')
+        model.load_state_dict(checkpoint['model_state_dict'])
+        optimizer.load_state_dict(checkpoint['optimizer_state_dict'])
+        print("Loaded model")   
+    except:
+        pass
 
     # Training loop
     for epoch in range(num_epochs):
         running_loss = 0.0
         for i, data in enumerate(train_loader, 0):
-            if(i == 4):
-                pass
-            else:
-                inputs, labels = data[0].to(device), data[1].to(device)
-                optimizer.zero_grad()
 
-                outputs = model(inputs)
-                loss = criterion(outputs, labels.view(25,1))
-                # Backward pass and optimization
-                loss.backward()
-                optimizer.step()
+            inputs, labels = data[0].to(device), data[1].to(device)
+            optimizer.zero_grad()
 
-                running_loss += loss.item()
+            outputs = model(inputs)
+            loss = criterion(outputs, labels.view(batch_size,1))
+
+            # Backward pass and optimization
+            loss.backward()
+            optimizer.step()
+
+            running_loss += loss.item()
             
 
         print(f"Epoch {epoch+1}/{num_epochs}, Loss: {running_loss / len(train_loader)}")
 
     print('Finished Training')
+    
+    # save model
+    cp = {
+        'model_state_dict' : model.state_dict(),
+        'optimizer_state_dict' : optimizer.state_dict()
+    }
 
-    # Save the trained model
-    torch.save(model.state_dict(), 'crisp_classifier.pth')
+    torch.save(cp, 'crisp_classifier.pth')
