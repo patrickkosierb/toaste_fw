@@ -109,3 +109,5 @@ venv.bak/
 /training3
 /learning/data_raw
 /learning/data_label
+/storedPics
+
