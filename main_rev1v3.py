@@ -10,7 +10,6 @@ import sys
 import threading
 import ble
 import datetime
-import torch
 from i2ctest import TCAM
 from crisp_net import CrispClassifier
 
