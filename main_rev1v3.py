@@ -116,9 +116,7 @@ if __name__ == '__main__':
 
     # load trained model
     model = CrispClassifier()
-    load_model = torch.load(os.getcwd()+'/learning/crisp_classifier.pth')
-    model.load_state_dict(load_model['model_state_dict'])
-    model.eval()
+    model.load()
     
     while(1): # multi cycle while loop
 

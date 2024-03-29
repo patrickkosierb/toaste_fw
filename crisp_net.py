@@ -30,6 +30,11 @@ class CrispClassifier(nn.Module):
         x = self.sigmoid(self.fc2(x))
         return x
 
+    def load(self):
+        load_model = torch.load(os.getcwd()+'/learning/crisp_classifier.pth')
+        self.load_state_dict(load_model['model_state_dict'])
+        self.eval() #set to evaluate mode
+
     def predictCrispiness(self, frame):
         capture = self.transform(frame).unsqueeze(0)  # Add batch dimension
         with torch.no_grad():
