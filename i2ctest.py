@@ -120,7 +120,7 @@ class TCAM:
 		return True
 
 	def getCurrentBuff(self):
-		return self._buff
+		return self._buff[0:self._picLen]
 		
 	def saveCurrentBuff(self):
 		time = datetime.datetime.now().strftime("%m:%d:%Y,%H:%M:%S")
@@ -128,10 +128,8 @@ class TCAM:
 			f.write(bytearray(self._buff[0:self._picLen]))
 			f.close()	
 	
-	
-
-cam1 = TCAM(0x55)
-cam1.begin()
-time.sleep(1)
-cam1.requestPhoto()
-cam1.getCurrentBuff()
+#cam1 = TCAM(0x55)
+#cam1.begin()
+#time.sleep(1)
+#cam1.requestPhoto()
+#cam1.getCurrentBuff()

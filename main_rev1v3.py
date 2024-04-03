@@ -12,6 +12,7 @@ import ble
 import datetime
 from i2ctest import TCAM
 from crisp_net import CrispClassifier
+import sendImg
 
 cwd = os.getcwd()
 
@@ -34,6 +35,7 @@ right_done = False
 cam1=None
 pic_count = 1
 buff = []
+tbuff = []
 abort_butt = False
 
 def crispiness_to_colour(crispiness):
@@ -59,6 +61,7 @@ def eject():
     right_done = False
     pic_count = 0
     buff = []
+    tbuff = []
 
 ## ABORT CALLBACKS ##
 def signal_handler(sig, frame):
@@ -178,6 +181,7 @@ if __name__ == '__main__':
                 heaters(GPIO.HIGH)
                 cam1.getPhoto()
                 buff.append(cam1.getCurrentBuff())
+                tbuff.append(dt)
                 cam1.saveCurrentBuff()
                 # time.sleep(3) 
                 # time = datetime.datetime.now().strftime("%m:%d:%Y,%H:%M:%S")
@@ -205,9 +209,11 @@ if __name__ == '__main__':
                 cur_pic = buff_len
                 print("Picture read: "+str(dt)+" Buffer length: "+str(buff_len))
             
-            time.sleep(1) 
-
+            time.sleep(1)
+            
+        sendImg.sendBuffers(buff,tbuff)
         eject()
         ble_service.set_state(ble.State.IDLE)  
         time.sleep(2)
+        
     GPIO.cleanup()
