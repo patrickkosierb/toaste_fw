@@ -181,6 +181,7 @@ if __name__ == '__main__':
                 abort_state=True
             
         sendImg.sendBuffers(buff,tbuff)
+        cleanUp()
         toaster.eject()
         ble_service.set_state(ble.State.IDLE)  
         time.sleep(2)
