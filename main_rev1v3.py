@@ -13,16 +13,11 @@ import datetime
 from i2ctest import TCAM
 from crisp_net import CrispClassifier
 import sendImg
+from toasterHWI import ToasteHW
 
 cwd = os.getcwd()
 
-## GPIO MACROS ## 
-SOLENOID_IN = 26
-ABORT_IN = 24
-SOLENOID_OUT  = 27
-LEFT_CNTRL  = 22
-RIGHT_CNTRL = 23
-
+toaster = None
 ## OTHER ## 
 MAX_TIME = 300  
 T_SAMPLE = 10
@@ -36,7 +31,9 @@ cam1=None
 pic_count = 1
 buff = []
 tbuff = []
-abort_butt = False
+abort_state = False
+solTrigger = 0
+
 
 def crispiness_to_colour(crispiness):
     return np.multiply(crispiness, slope) + intercept
@@ -48,55 +45,39 @@ def compare(state, current, final, bound, pin):
         return True
     return state
 
-def heaters(trigger):
-    GPIO.output(LEFT_CNTRL,trigger)
-    GPIO.output(RIGHT_CNTRL, trigger)
-
-def eject():
-    global pic_count
-    heaters(GPIO.LOW)
-    GPIO.output(SOLENOID_OUT, GPIO.LOW)
-    print("Ejected!")
+def cleanUp():
     left_done = False
     right_done = False
     pic_count = 0
     buff = []
     tbuff = []
 
+
 ## ABORT CALLBACKS ##
 def signal_handler(sig, frame):
     print('SIGINT received. Exiting gracefully.')
-    eject()
+    toaster.emergencyEject()
     GPIO.cleanup()
     exit()
 
-def abort_button(channel):
+def abort_callBack(channel):
     print("Abort Initialized")
-    global abort_butt
-    abort_butt = True
+    toaster.emergencyEject()
+    abort_state = True
     # eject()
     # GPIO.cleanup()
     # exit()
 
-## SETUP ##
-def gpio_setup():
-    GPIO.setmode(GPIO.BCM)
-    GPIO.setup(SOLENOID_IN, GPIO.IN, pull_up_down=GPIO.PUD_UP)
-    GPIO.setup(ABORT_IN, GPIO.IN,pull_up_down=GPIO.PUD_UP)
-    GPIO.setup(SOLENOID_OUT, GPIO.OUT)
-    GPIO.setup(LEFT_CNTRL, GPIO.OUT)
-    GPIO.setup(RIGHT_CNTRL, GPIO.OUT)
-    GPIO.output(LEFT_CNTRL, GPIO.LOW)
-    GPIO.output(RIGHT_CNTRL, GPIO.LOW)
-    GPIO.output(SOLENOID_OUT, GPIO.LOW)
-    GPIO.add_event_detect(ABORT_IN, GPIO.FALLING, callback=abort_button, bouncetime=100)
-    signal.signal(signal.SIGINT, signal_handler)
+def solenoid_callBack(channel):
+    toaster.setSolenoid(1)
+    print("Slider down")
+    solTrigger = 1
 
+## SETUP ## 
 
 if __name__ == '__main__':
-    
-    gpio_setup()
-
+    toaster = ToasteHW(abort_callBack,solenoid_callBack)
+    signal.signal(signal.SIGINT, signal_handler)
     # BLE Startup
     app = ble.Application()
     ble_service = ble.ToastE_Service(0)
@@ -121,18 +102,12 @@ if __name__ == '__main__':
     #model.load()
     
     while(1): # multi cycle while loop
-
-        abort_butt = False
-        while(GPIO.input(SOLENOID_IN)):
-            time.sleep(0.1)
-
-        GPIO.output(SOLENOID_OUT, GPIO.HIGH)
-        time.sleep(0.1)
+        abort_state = False
+        while(not solTrigger):
+            time.sleep(0.01)
+        solTrigger =0
+        print("Starting Cycle")
         #TODO: take base picture 
-        print("Slider down")
-        if(GPIO.input(SOLENOID_IN)):
-            abort_butt = True
-        
         #TODO: fix ble
         # while(not ble_service.get_target_crispiness() and not abort_butt):
         #     time.sleep(0.1)
@@ -155,7 +130,7 @@ if __name__ == '__main__':
         
         ble_service.set_state(ble.State.TOASTING)
         dt = 0
-        if(not abort_butt):
+        if(not abort_state):
             # crispiness = ble_service.get_target_crispiness()/100
             # print("Crispiness input"+str(crispiness))
             crispiness = 0.5 #hard coded for now
@@ -164,21 +139,24 @@ if __name__ == '__main__':
 
             start_ctrl = 1
             start_time = time.time()
-            heaters(GPIO.HIGH)
+            toaster.setLeft(1)
+            toaster.setRight(1)
             time.sleep(0.5)
             cur_pic = 0
 
             ble_service.set_state(ble.State.TOASTING)
 
-        while(dt<MAX_TIME and not (left_done and right_done) and not abort_butt):
+        while(dt<MAX_TIME and not (left_done and right_done) and not abort_state):
             try:
                 dt = int(np.round(time.time()-start_time))
 
                 if not(dt%T_SAMPLE): #take picture
-                    heaters(GPIO.LOW)
+                    toaster.setLeft(0)
+                    toaster.setRight(0)
                     time.sleep(0.5)
                     ret = cam1.requestPhoto()
-                    heaters(GPIO.HIGH)
+                    toaster.setLeft(1)
+                    toaster.setRight(1)
                     if(ret):
                         ret = cam1.collect()
                         if(ret):
@@ -213,11 +191,13 @@ if __name__ == '__main__':
                 time.sleep(1)
             except Exception as error:
                 print(error)
-                abort_butt=True
+                toaster.emergencyEject()
+                abort_state=True
             
         sendImg.sendBuffers(buff,tbuff)
-        eject()
+        toaster.eject()
         ble_service.set_state(ble.State.IDLE)  
         time.sleep(2)
+        toaster.clearEject()
         
     GPIO.cleanup()
