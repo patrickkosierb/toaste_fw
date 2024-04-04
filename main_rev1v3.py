@@ -52,6 +52,7 @@ def compare(state, current, final, bound, pin):
 #####################################
 
 def cleanUp():
+    global left_done, right_done, pic_count, buff, tbuff
     left_done = False
     right_done = False
     pic_count = 0
@@ -67,6 +68,7 @@ def signal_handler(sig, frame):
     exit()
 
 def abort_callBack(channel):
+    global abort_state
     print("Abort Initialized")
     toaster.emergencyEject()
     abort_state = True
@@ -75,6 +77,7 @@ def abort_callBack(channel):
     # exit()
 
 def solenoid_callBack(channel):
+    global solTrigger
     toaster.setSolenoid(1)
     print("Slider down")
     solTrigger = 1
@@ -109,9 +112,10 @@ if __name__ == '__main__':
     
     while(1): # multi cycle while loop
         abort_state = False
+        solTrigger = 0
         while(not solTrigger):
             time.sleep(0.01)
-        solTrigger =0
+        solTrigger = 0
         print("Starting Cycle")
         #TODO: take base picture 
         #TODO: fix ble
