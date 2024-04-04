@@ -31,7 +31,7 @@ class CrispClassifier(nn.Module):
         return x
 
     def load(self):
-        load_model = torch.load(os.getcwd()+'/learning/crisp_classifier.pth')
+        load_model = torch.load(os.getcwd()+'/crisp_classifier.pth')
         self.load_state_dict(load_model['model_state_dict'])
         self.eval() #set to evaluate mode
 
@@ -67,6 +67,7 @@ class CrispDataset(Dataset):
             temp=temp+img_path[start_i+i]
 
         label = int(temp)/100 # convert labels to cripsiness values
+        # print(label)
         return image, torch.tensor(label, dtype=torch.float32)
 
 if __name__ == "__main__":
@@ -82,7 +83,7 @@ if __name__ == "__main__":
     ])
 
     # Define hyperparameters
-    batch_size = 4 #depends on how much training data
+    batch_size = 6
     learning_rate = 0.001
     num_epochs = 10
 
@@ -98,7 +99,7 @@ if __name__ == "__main__":
 
     # Load model if already exists
     try: 
-        checkpoint = torch.load(os.getcwd()+'/learning/crisp_classifier.pth')
+        checkpoint = torch.load(os.getcwd()+'/crisp_classifier.pth')
         model.load_state_dict(checkpoint['model_state_dict'])
         optimizer.load_state_dict(checkpoint['optimizer_state_dict'])
         print("Loaded model")   
@@ -106,21 +107,25 @@ if __name__ == "__main__":
         pass
 
     # training
+    print(train_dataset.__len__())
     for epoch in range(num_epochs):
         running_loss = 0.0
-        for i, data in enumerate(train_loader, 0):
+        for data in train_loader:
+            try:
+                inputs, labels = data[0].to(device), data[1].to(device)
+                optimizer.zero_grad()
 
-            inputs, labels = data[0].to(device), data[1].to(device)
-            optimizer.zero_grad()
+                outputs = model(inputs)
+                print(labels)
+                loss = criterion(outputs, labels.view(batch_size,1))
 
-            outputs = model(inputs)
-            loss = criterion(outputs, labels.view(batch_size,1))
+                # Backward pass and optimization
+                loss.backward()
+                optimizer.step()
 
-            # Backward pass and optimization
-            loss.backward()
-            optimizer.step()
-
-            running_loss += loss.item()
+                running_loss += loss.item()
+            except:
+                pass
             
 
         print(f"Epoch {epoch+1}/{num_epochs}, Loss: {running_loss / len(train_loader)}")

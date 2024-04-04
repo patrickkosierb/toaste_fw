@@ -34,6 +34,7 @@ if __name__ == '__main__':
     
     for i in range(len(raw_dir)):
         cv2.imwrite(label+"/crisp-"+str(int(c_filtered[i]))+".jpg",frames[i])
+    print(len((os.listdir(label))))
 
     plt.plot(c_raw,marker='o', linestyle='', markersize=8)
     plt.plot(c_filtered,marker='o', linestyle='', markersize=8)

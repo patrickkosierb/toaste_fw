@@ -17,6 +17,8 @@ class TCAM:
 		self._state = True
 		self._readMsg = None #= #i2c_msg.read(self._address,self._picLen)
 		self._buff  = []
+		self._failSleepTime = 1
+		self._dt = 0.0001
 		self._hash = crcengine.create_from_params(crcengine.CrcParams(0x07, 8, 0, reflect_in=True, reflect_out=True, xor_out=0))
   	
 	def begin(self):
@@ -26,7 +28,8 @@ class TCAM:
 		ret = False
 		if(self.ping()):
 			ret = self.config()
-		time.sleep(0.1)
+			pass
+		time.sleep(1)
 		print(ret)
 		return ret
 		
@@ -42,7 +45,7 @@ class TCAM:
 	def config(self):
 		confbuff= []
 		confbuff.append(ord('c'))
-		confbuff.append(3)#s->set_quality //        0-63
+		confbuff.append(12)#s->set_quality //        0-63
 		confbuff.append(2)##s->set_contrast//int   0 to 4
 		confbuff.append(2)##s->set_brightness//int 0 to 4
 		confbuff.append(2)##s->set_saturation//int  0 to 4
@@ -73,6 +76,7 @@ class TCAM:
 			self._bus.i2c_rdwr(write)
 			return True
 		except:
+			print("error in config")
 			return False
 			
 	def requestPhoto(self):
@@ -81,17 +85,25 @@ class TCAM:
 		write = i2c_msg.write(self._address,data)
 		try:
 			self._bus.i2c_rdwr(write)
-		except:
+		except Exception as error:
+			print("err in req")
+			print(error)
+			print("sleeping it off")
+			time.sleep(self._failSleepTime)
 			return False
-		time.sleep(0.1)
+		time.sleep(0.01)
 		return True
 
 	def getPhoto(self):
 		self._readMsg = i2c_msg.read(self._address,4+1)
 		try:
 			self._bus.i2c_rdwr(self._readMsg)
-			time.sleep(0.01)
-		except:
+			time.sleep(self._dt)
+		except Exception as error:
+			print("err in init pull")
+			print(error)
+			print("sleeping it off")
+			time.sleep(self._failSleepTime)
 			return False
 		block =[]
 		for value in self._readMsg:
@@ -99,43 +111,96 @@ class TCAM:
 		testv = int.from_bytes(bytearray(block[0:3]),"little")
 		#print("i2count "+str(testv))
 		
-		self._readMsg = i2c_msg.read(self._address,12+1)
+		self._readMsg = i2c_msg.read(self._address,13+1)
 		try:
 			self._bus.i2c_rdwr(self._readMsg)
-			time.sleep(0.01)
-		except:
+			time.sleep(self._dt)
+		except Exception as error:
+			print("err in length pull")
+			print(error)
+			print("sleeping it off")
+			time.sleep(self._failSleepTime)
 			return False
-		block= self._readMsg.buf[0:3]
+		block= self._readMsg.buf[1:4]
 		#print(block)
 		leng = int.from_bytes(block,"little")
 		self._picLen = leng
+		if(int.from_bytes(self._readMsg.buf[0],"little") != 0):
+			print("Capture Failed")
 		#print("length "+str(leng))
 		#print(bytearray(list(self._readMsg)).hex())
-		#print(bytearray(list(self._readMsg)[0:12]).hex())
+		#print(bytearray(list(self._readMsg)[0:13]).hex())
 		#print("crc")
-		#print(int.from_bytes(self._readMsg.buf[12],"little"))
+		lcrca = int.from_bytes(self._readMsg.buf[13],"little")
 		#print("digest")
-		#print(self._hash(bytearray(list(self._readMsg)[0:12])))
-		#print(math.ceil(leng/31))
+		lcrcb = self._hash(bytearray(list(self._readMsg)[0:13]))
+		if(lcrca != lcrcb):
+			print("error in length")
+			print("sleeping it off")
+			time.sleep(self._failSleepTime)
+			return False
+		#print("Runs "+str(math.ceil(leng/31)))
 		#print("start transfer")
 		crcerr = False
 		for i in range(math.ceil(leng/31)):
-			self._readMsg = i2c_msg.read(self._address,32)
+			getb = 31
+			if((leng - i*31)<31):
+				getb = leng - i*31
+			#print(str(leng - i*31)+" " + str(getb))
+			self._readMsg = i2c_msg.read(self._address,getb+1)
 			try:
 				self._bus.i2c_rdwr(self._readMsg)
-				time.sleep(0.001)
-				self._buff.extend(list(self._readMsg)[0:31])
-				crca = int.from_bytes(self._readMsg.buf[31],"little")
-				crcb = self._hash(bytearray(list(self._readMsg)[0:31]))
+				time.sleep(self._dt)
+				self._buff.extend(list(self._readMsg)[0:getb])
+				crca = int.from_bytes(self._readMsg.buf[getb],"little")
+				crcb = self._hash(bytearray(list(self._readMsg)[0:getb]))
 				if(crca != crcb):
 					crcerr = True
 			except Exception as error:
+				print("err in main pull")
 				print(error)
+				print("sleeping it off")
+				time.sleep(self._failSleepTime)
 				return False
 		if(crcerr):
 			print("error detection caught 1")
+			return False
 		return True
 
+	def sendConfirmation(self,flag):
+		data= bytes('a', 'utf-8')
+		if(flag):
+			data = bytes('as', 'utf-8')#send sucess
+		else:
+			data = bytes('af', 'utf-8')#send fail
+		write = i2c_msg.write(self._address,data)
+		try:
+			self._bus.i2c_rdwr(write)
+		except Exception as error:
+			print("err in ack")
+			print(error)
+			print("sleeping it off")
+			time.sleep(self._failSleepTime)
+			return False
+		time.sleep(self._dt)
+		return True
+		
+	def collect(self):
+		ret =self.getPhoto()
+		self.sendConfirmation(ret)
+		if(ret):
+			return True
+		else:
+			#try again
+			ret =self.getPhoto()
+			
+			self.sendConfirmation(True)
+			if(ret):
+				return True
+			else:
+				print("Photo collection failed after retry")
+		return False
+         
 	def getCurrentBuff(self):
 		return self._buff[0:self._picLen]
 		
@@ -145,11 +210,11 @@ class TCAM:
 			f.write(bytearray(self._buff[0:self._picLen]))
 			f.close()	
 	
-cam1 = TCAM(0x55)
-cam1.begin()
-time.sleep(1)
-cam1.requestPhoto()
-print("get photo" + str(cam1.getPhoto()))
+#cam1 = TCAM(0x55)
+#cam1.begin()
+#time.sleep(1)
+#cam1.requestPhoto()
+#print("get photo" + str(cam1.getPhoto()))
 #print(cam1.getCurrentBuff())
-cam1.saveCurrentBuff()
+#cam1.saveCurrentBuff()
 #cam1.getCurrentBuff()
