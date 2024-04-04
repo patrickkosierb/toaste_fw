@@ -3,6 +3,7 @@
 #include <nvs_flash.h>
 #include <sys/param.h>
 #include <string.h>
+#include <esp_crc.h>
 
 #include <Wire.h>
 
@@ -42,40 +43,59 @@ camera_fb_t* fb;
 unsigned long start_t = 0;
 uint32_t bytesLeft=0;
 
+//error correction buffer
+uint8_t pecBuff [32];
+uint8_t pecLen=0;
+
 void onRequest(){
   if(state==1){
     Serial.printf("on1Request: %d \n",fb->len);
-    Wire.write((uint8_t*)&fb->len,4);
-    Wire.write((uint8_t*)&fb->width,4);
-    Wire.write((uint8_t*)&fb->height,4);
+    writeToPecBuff((uint8_t*)&fb->len,4);
+    writeToPecBuff((uint8_t*)&fb->width,4);
+    writeToPecBuff((uint8_t*)&fb->height,4);
     bytesLeft=fb->len;
     state = 2;
   }else if(state == 2){
     Serial.printf("on2Request: %d \n",bytesLeft);
-    int cy = 32;
+    int cy = 31;
     int start = fb->len - bytesLeft;
-    Wire.write(fb->buf+start,cy);
-    //Wire.write(0);
-    for(int i =start; i<cy;i++){
-      Serial.printf("%d ",*(fb->buf+i));
-    }
-    if(bytesLeft>32){
-      bytesLeft-=32;
+    writeToPecBuff(fb->buf+start,cy);
+    if(bytesLeft>31){
+      bytesLeft-=31;
     }else{
       state =3;
     }
   }else if(state==3){
     Serial.printf("\non3Request: %d \n",i2count);
-    Wire.write((uint8_t*)&i2count,4);
+    writeToPecBuff((uint8_t*)&i2count,4);
     
     esp_camera_fb_return(fb);
     i2count++;
     state = 0;
   }else{
-    Wire.write(0,1);
+    writeToPecBuff(0,1);
   }
+  sendPecBuff();
   //Serial.print("onRequest: ");
   //Serial.println(millis()-start_t);
+}
+
+//written length must not exceed 31
+void writeToPecBuff(uint8_t* data,uint8_t len){
+  for(uint8_t i=0;i<len;i++){
+    pecBuff[i+pecLen] = *(data+i);
+  }
+  pecLen+=len;
+}
+void sendPecBuff(){
+  uint8_t tpec [32];
+  for(uint8_t i=0;i<pecLen;i++){
+    tpec[i]=pecBuff[i];
+  }
+  uint8_t pec = ~esp_crc8_le(~0x00,(uint8_t *)tpec,pecLen);
+  Wire.write(pecBuff,pecLen);
+  Wire.write(&pec,1);
+  pecLen=0;
 }
 
 void onReceive(int len){
