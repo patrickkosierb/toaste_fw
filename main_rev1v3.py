@@ -177,12 +177,14 @@ if __name__ == '__main__':
                 if not(dt%T_SAMPLE): #take picture
                     heaters(GPIO.LOW)
                     time.sleep(0.5)
-                    cam1.requestPhoto()
+                    ret = cam1.requestPhoto()
                     heaters(GPIO.HIGH)
-                    cam1.getPhoto()
-                    buff.append(cam1.getCurrentBuff())
-                    tbuff.append(dt)
-                    cam1.saveCurrentBuff()
+                    if(ret):
+                        ret = cam1.collect()
+                        if(ret):
+                            buff.append(cam1.getCurrentBuff())
+                            tbuff.append(dt)
+                            cam1.saveCurrentBuff()
                     # time.sleep(3) 
                     # time = datetime.datetime.now().strftime("%m:%d:%Y,%H:%M:%S")
 
