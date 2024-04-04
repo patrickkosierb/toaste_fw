@@ -24,7 +24,7 @@ LEFT_CNTRL  = 22
 RIGHT_CNTRL = 23
 
 ## OTHER ## 
-MAX_TIME = 180  
+MAX_TIME = 300  
 T_SAMPLE = 10
 ERROR_BOUND = 5
 slope = np.array(slope)
@@ -117,8 +117,8 @@ if __name__ == '__main__':
     cam1.begin()
 
     # load trained model
-    model = CrispClassifier()
-    model.load()
+    #model = CrispClassifier()
+    #model.load()
     
     while(1): # multi cycle while loop
 
@@ -171,45 +171,47 @@ if __name__ == '__main__':
             ble_service.set_state(ble.State.TOASTING)
 
         while(dt<MAX_TIME and not (left_done and right_done) and not abort_butt):
+            try:
+                dt = int(np.round(time.time()-start_time))
 
-            dt = int(np.round(time.time()-start_time))
+                if not(dt%T_SAMPLE): #take picture
+                    heaters(GPIO.LOW)
+                    time.sleep(0.5)
+                    cam1.requestPhoto()
+                    heaters(GPIO.HIGH)
+                    cam1.getPhoto()
+                    buff.append(cam1.getCurrentBuff())
+                    tbuff.append(dt)
+                    cam1.saveCurrentBuff()
+                    # time.sleep(3) 
+                    # time = datetime.datetime.now().strftime("%m:%d:%Y,%H:%M:%S")
 
-            if not(dt%T_SAMPLE): #take picture
-                heaters(GPIO.LOW)
-                time.sleep(0.5)
-                cam1.requestPhoto()
-                heaters(GPIO.HIGH)
-                cam1.getPhoto()
-                buff.append(cam1.getCurrentBuff())
-                tbuff.append(dt)
-                cam1.saveCurrentBuff()
-                # time.sleep(3) 
-                # time = datetime.datetime.now().strftime("%m:%d:%Y,%H:%M:%S")
+                buff_len = len(buff)
 
-            buff_len = len(buff)
+                if buff_len > cur_pic: #read picture
+                    #nparr = np.frombuffer(buff[buff_len-1], np.uint8)
+                    #img_np = cv2.imdecode(nparr, cv2.IMREAD_COLOR) # cv2.IMREAD_COLOR in OpenCV 3.1
+                    #left_avg = np.array(cv2.mean(img_np)[0:3])
 
-            if buff_len > cur_pic: #read picture
-                nparr = np.frombuffer(buff[buff_len-1], np.uint8)
-                img_np = cv2.imdecode(nparr, cv2.IMREAD_COLOR) # cv2.IMREAD_COLOR in OpenCV 3.1
-                left_avg = np.array(cv2.mean(img_np)[0:3])
+                    # TODO:(replace 192) convert byte array to PIL for CNN input once implemented delete lls related
+                    # c1_img_np = nparr.reshape((height, width, 3))
+                    # c1_img = Image.fromarray(img_np)
+                    # c1_cur_crispiness = model.predictCrispiness(c1_img)
+                    # if(c1_cur_crispiness>=target):
+                        # c1_done = True
+                    #######################
 
-                # TODO:(replace 192) convert byte array to PIL for CNN input once implemented delete lls related
-                # c1_img_np = nparr.reshape((height, width, 3))
-                # c1_img = Image.fromarray(img_np)
-                # c1_cur_crispiness = model.predictCrispiness(c1_img)
-                # if(c1_cur_crispiness>=target):
-                    # c1_done = True
-                #######################
-
-                # print( "Left:\t", left_avg, "\n") 
-                # left_done = compare(left_done, left_avg, target, ERROR_BOUND, LEFT_CNTRL)
-                # right_done = left_done
-                # right_done = compare(right_done, right_avg, target, ERROR_BOUND, RIGHT_CNTRL)
-                
-                cur_pic = buff_len
-                print("Picture read: "+str(dt)+" Buffer length: "+str(buff_len))
-            
-            time.sleep(1)
+                    # print( "Left:\t", left_avg, "\n") 
+                    # left_done = compare(left_done, left_avg, target, ERROR_BOUND, LEFT_CNTRL)
+                    # right_done = left_done
+                    # right_done = compare(right_done, right_avg, target, ERROR_BOUND, RIGHT_CNTRL)
+                    
+                    cur_pic = buff_len
+                    print("Picture read: "+str(dt)+" Buffer length: "+str(buff_len))
+                time.sleep(1)
+            except Exception as error:
+                print(error)
+                abort_butt=True
             
         sendImg.sendBuffers(buff,tbuff)
         eject()

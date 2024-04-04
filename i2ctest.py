@@ -6,6 +6,7 @@ import cv2
 import numpy as np
 import sys
 import os
+import crcengine
 
 class TCAM:
 	
@@ -16,6 +17,7 @@ class TCAM:
 		self._state = True
 		self._readMsg = None #= #i2c_msg.read(self._address,self._picLen)
 		self._buff  = []
+		self._hash = crcengine.create_from_params(crcengine.CrcParams(0x07, 8, 0, reflect_in=True, reflect_out=True, xor_out=0))
   	
 	def begin(self):
 		# Open I2C bus
@@ -85,7 +87,7 @@ class TCAM:
 		return True
 
 	def getPhoto(self):
-		self._readMsg = i2c_msg.read(self._address,4)
+		self._readMsg = i2c_msg.read(self._address,4+1)
 		try:
 			self._bus.i2c_rdwr(self._readMsg)
 			time.sleep(0.01)
@@ -95,28 +97,43 @@ class TCAM:
 		for value in self._readMsg:
 			block.append(value)
 		testv = int.from_bytes(bytearray(block[0:3]),"little")
-		print("i2count "+str(testv))
+		#print("i2count "+str(testv))
 		
-		self._readMsg = i2c_msg.read(self._address,12)
+		self._readMsg = i2c_msg.read(self._address,12+1)
 		try:
 			self._bus.i2c_rdwr(self._readMsg)
 			time.sleep(0.01)
 		except:
 			return False
 		block= self._readMsg.buf[0:3]
-		print(block)
+		#print(block)
 		leng = int.from_bytes(block,"little")
 		self._picLen = leng
-		print("length "+str(leng))
-		print(bytearray(list(self._readMsg)).hex())
-		for i in range(math.ceil(leng/32)):
+		#print("length "+str(leng))
+		#print(bytearray(list(self._readMsg)).hex())
+		#print(bytearray(list(self._readMsg)[0:12]).hex())
+		#print("crc")
+		#print(int.from_bytes(self._readMsg.buf[12],"little"))
+		#print("digest")
+		#print(self._hash(bytearray(list(self._readMsg)[0:12])))
+		#print(math.ceil(leng/31))
+		#print("start transfer")
+		crcerr = False
+		for i in range(math.ceil(leng/31)):
 			self._readMsg = i2c_msg.read(self._address,32)
 			try:
 				self._bus.i2c_rdwr(self._readMsg)
 				time.sleep(0.001)
-				self._buff.extend(list(self._readMsg))
-			except:
+				self._buff.extend(list(self._readMsg)[0:31])
+				crca = int.from_bytes(self._readMsg.buf[31],"little")
+				crcb = self._hash(bytearray(list(self._readMsg)[0:31]))
+				if(crca != crcb):
+					crcerr = True
+			except Exception as error:
+				print(error)
 				return False
+		if(crcerr):
+			print("error detection caught 1")
 		return True
 
 	def getCurrentBuff(self):
@@ -124,12 +141,15 @@ class TCAM:
 		
 	def saveCurrentBuff(self):
 		time = datetime.datetime.now().strftime("%m:%d:%Y,%H:%M:%S")
-		with open("storedPics/"+time+"-"+"pic"+str(22)+".jpg", "wb") as f:
+		with open("storedPics/test"+time+"-"+"pic"+str(22)+".jpg", "wb") as f:
 			f.write(bytearray(self._buff[0:self._picLen]))
 			f.close()	
 	
-#cam1 = TCAM(0x55)
-#cam1.begin()
-#time.sleep(1)
-#cam1.requestPhoto()
+cam1 = TCAM(0x55)
+cam1.begin()
+time.sleep(1)
+cam1.requestPhoto()
+print("get photo" + str(cam1.getPhoto()))
+#print(cam1.getCurrentBuff())
+cam1.saveCurrentBuff()
 #cam1.getCurrentBuff()
