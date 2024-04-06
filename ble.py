@@ -47,7 +47,12 @@ def reader(ble_service):
                 time_elapsed_sec = 0
                 state = State.IDLE
                 ble_service.set_cancel_flag(False)
-
+                
+            elif (state == State.DONE and target is None):
+                crispiness = 0
+                time_remaining_sec = 200
+                time_elapsed_sec = 0
+                state = State.IDLE
             elif (target and crispiness >= target):
                 state = State.DONE
             elif (target and target > 0):
@@ -57,7 +62,11 @@ def reader(ble_service):
                 crispiness += 0.05*time_elapsed_sec # TODO: temp for testing
                 crispiness = round(crispiness)
             elif (target): 
-                state = State.CONFIGURED
+                state = State.TOASTING
+            elif (state == State.IDLE):
+                x = input("Type when Toast-E is ready")
+                if x:
+                    state = State.CONFIGURED
             else:
                 # no change
                 continue
@@ -67,7 +76,7 @@ def reader(ble_service):
             ble_service.set_state(state)
             ble_service.set_time_remaining(time_remaining_sec)
             ble_service.set_time_elapsed(time_elapsed_sec)
-
+            
             print('target:', target, '\ncurrent:', crispiness,'\nstate:', state, '\ntime_elap:', time_elapsed_sec, '\n')
     except Exception as e:
         print(e)

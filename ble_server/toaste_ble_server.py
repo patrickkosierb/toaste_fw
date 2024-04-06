@@ -145,8 +145,10 @@ class ToastE_Characteristic(Characteristic):
                 print(data)
                 self.service.set_target_crispiness(data[0])
                 # self.service.set_target_crispiness(int(value[1]))
+            elif command == MessageTypes.RESET:
+                self.service.set_target_crispiness(None)
             else:
-                print("Command not recognised")
+                print("Command not recognised", command)
         except Exception as e:
             print(e)
 
