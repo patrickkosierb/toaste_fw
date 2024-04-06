@@ -6,6 +6,7 @@ import torchvision.transforms as transforms
 from PIL import Image
 import os
 
+
 # Define the neural network architecture
 class CrispClassifier(nn.Module):
     def __init__(self):
@@ -59,7 +60,7 @@ class CrispDataset(Dataset):
             image = self.transform(image)
 
         # Label decoding
-        start_i = img_path.index('-')
+        start_i = img_path.index(':')
         end_i = img_path.index('.')
         temp=""
 
@@ -88,7 +89,7 @@ if __name__ == "__main__":
     num_epochs = 10
 
     # Load data
-    dataPath = os.getcwd()+"/learning/data_label/"
+    dataPath = os.getcwd()+"/learning/data_label/04-04-24_20-28" #change depending on set you want to train on (can automate this)
     train_dataset = CrispDataset(data_dir=dataPath, transform=transform)
     train_loader = DataLoader(train_dataset, batch_size=batch_size, shuffle=True)
 
@@ -107,7 +108,6 @@ if __name__ == "__main__":
         pass
 
     # training
-    print(train_dataset.__len__())
     for epoch in range(num_epochs):
         running_loss = 0.0
         for data in train_loader:
