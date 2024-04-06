@@ -21,7 +21,7 @@ cwd = os.getcwd()
 
 toaster = None
 ## OTHER ## 
-MAX_TIME = 300  
+MAX_TIME = 420
 T_SAMPLE = 10
 ERROR_BOUND = 5
 
@@ -64,6 +64,7 @@ def cleanUp():
 def signal_handler(sig, frame):
     print('SIGINT received. Exiting gracefully.')
     toaster.emergencyEject()
+    time.sleep(0.5); #delay for slider
     GPIO.cleanup()
     exit()
 
@@ -72,9 +73,6 @@ def abort_callBack(channel):
     print("Abort Initialized")
     toaster.emergencyEject()
     abort_state = True
-    # eject()
-    # GPIO.cleanup()
-    # exit()
 
 def solenoid_callBack(channel):
     global solTrigger

@@ -17,7 +17,7 @@ class ToasteHW:
         GPIO.setup(RIGHT_CNTRL, GPIO.OUT)
         GPIO.output(LEFT_CNTRL, GPIO.LOW)
         GPIO.output(RIGHT_CNTRL, GPIO.LOW)
-        GPIO.output(SOLENOID_OUT, GPIO.LOW)
+        GPIO.output(SOLENOID_OUT, GPIO.HIGH)
         GPIO.add_event_detect(ABORT_IN, GPIO.FALLING, callback=abortCB, bouncetime=100)
         GPIO.add_event_detect(SOLENOID_IN, GPIO.FALLING, callback=solenoidCB, bouncetime=100)
         self.emergency_eject_state=0
@@ -36,21 +36,21 @@ class ToasteHW:
 
     def setSolenoid(self,sig):
         if(sig == 1 and self.emergency_eject_state == 0):
-            GPIO.output(SOLENOID_OUT, GPIO.HIGH)
-        else:
             GPIO.output(SOLENOID_OUT, GPIO.LOW)
+        else:
+            GPIO.output(SOLENOID_OUT, GPIO.HIGH)
         
     def eject(self):
         GPIO.output(RIGHT_CNTRL, GPIO.LOW)
         GPIO.output(LEFT_CNTRL, GPIO.LOW)
-        GPIO.output(SOLENOID_OUT, GPIO.LOW)
+        GPIO.output(SOLENOID_OUT, GPIO.HIGH)
         print("Normal Ejected!")
 
     def emergencyEject(self):
         self.emergency_eject_state = 1
         GPIO.output(RIGHT_CNTRL, GPIO.LOW)
         GPIO.output(LEFT_CNTRL, GPIO.LOW)
-        GPIO.output(SOLENOID_OUT, GPIO.LOW)
+        GPIO.output(SOLENOID_OUT, GPIO.HIGH)
         print("Emergency Ejected!")
 
     def clearEject(self):
