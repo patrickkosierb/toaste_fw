@@ -34,7 +34,6 @@ def Start_Touchscreen(pressF,releaseF,dragF):
 	
 def TouchscreenFunc():
 	dev = evdev.InputDevice(device_path)
-	print(dev)
 	dev.grab()
 	for event in dev.read_loop():
 		global pressed,xpos,ypos,SYMIN,SYMAX,AYMAX,SXMIN,SXMAX,AXMAX,press,release,drag
