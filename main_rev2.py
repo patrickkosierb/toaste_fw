@@ -127,14 +127,13 @@ if __name__ == '__main__':
         print("Starting Cycle")
         #gui.setState(1)
         cam1.requestPhoto()
+        cam1.collect()
         #while(not crisp_set and not abort_state):
         #    time.sleep(0.1)
         #crisp_set = 0
         
         if(not abort_state):
             print("Crispiness:", crispiness)
-            target = crispiness_to_colour(crispiness)
-            print("Target:\t\t", target)
             start_ctrl = 1
             start_time = time.time()
             toaster.setLeft(1)
@@ -170,22 +169,12 @@ if __name__ == '__main__':
                     # process buffer for cnn input 
                     img = Image.open(BytesIO(bytearray(buff[buff_len-1])))
                     left_crisp = model.predictCrispiness(img)
-                    #print("Target: ",cri)
+                    print("Target: ",cripsiness)
                     print("Current Crispiness: ",left_crisp)
-                    # if(left_crisp>=target):
-                        # left_done = True
-                    # right_done = left_done
+                    if(left_crisp>=target and dt>10):
+                        left_done = True
+                    right_done = left_done
 
-                    ########### TODO: remove after cnn works ###########
-                    #nparr = np.frombuffer(buff[buff_len-1], np.uint8)
-                    #img_np = cv2.imdecode(nparr, cv2.IMREAD_COLOR) # cv2.IMREAD_COLOR in OpenCV 3.1
-                    #left_avg = np.array(cv2.mean(img_np)[0:3])
-                    # print( "Left:\t", left_avg, "\n") 
-                    # left_done = compare(left_done, left_avg, target, ERROR_BOUND, LEFT_CNTRL)
-                    # right_done = left_done
-                    # right_done = compare(right_done, right_avg, target, ERROR_BOUND, RIGHT_CNTRL)
-                    ####################################################
-                    
                     cur_pic = buff_len
                     print("Picture read: "+str(dt)+" Buffer length: "+str(buff_len))
 
@@ -198,9 +187,8 @@ if __name__ == '__main__':
         sendImg.sendBuffers(buff,tbuff)
         cleanUp()
         toaster.eject()
-        #gui.setState(0)
-        #ble_service.set_state(ble.State.IDLE)  
-        time.sleep(2)
+        gui.setState(0)
+        time.sleep(3)
         toaster.clearEject()
         
     GPIO.cleanup()
