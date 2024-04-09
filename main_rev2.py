@@ -41,7 +41,7 @@ abort_state = False
 solTrigger = 0
 crisp_set = 0
 crispiness = 0.5
-
+abort_mode = 0
 
 #### TODO: Remove after cnn works ####
 def crispiness_to_colour(crispiness):
@@ -73,11 +73,17 @@ def signal_handler(sig, frame):
     exit()
 
 def abort_callBack(channel):
-    global abort_state
-    print("Abort Initialized")
-    print(channel)
-    toaster.emergencyEject()
-    abort_state = True
+    global abort_state, toaster
+    print("abort mode:",abort_mode)
+    if abort_mode:
+        print("Abort Initialized")
+        toaster.emergencyEject()
+        abort_state = True
+    else:
+        time.sleep(1)
+        ab =toaster.getAbort()
+        gui.press(ab)
+    
 
 def solenoid_callBack(channel):
     global solTrigger
@@ -113,6 +119,11 @@ if __name__ == '__main__':
         while(not solTrigger):
             time.sleep(0.01)
         solTrigger = 0
+        abort_mode = 1
+        #while(not crisp_set):
+        #    time.sleep(0.01)
+        crip_set = 0
+        abort_mode = 0
         print("Starting Cycle")
         #gui.setState(1)
         cam1.requestPhoto()

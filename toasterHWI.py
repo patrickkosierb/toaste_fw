@@ -67,3 +67,6 @@ class ToasteHW:
 
     def clearEject(self):
         self.emergency_eject_state = 0
+        
+    def getAbort(self):
+        return GPIO.input(ABORT_IN)
