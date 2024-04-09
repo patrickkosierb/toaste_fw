@@ -34,18 +34,20 @@ def Start_Touchscreen(pressF,releaseF,dragF):
 	
 def TouchscreenFunc():
 	dev = evdev.InputDevice(device_path)
+	print(dev)
 	dev.grab()
 	for event in dev.read_loop():
 		global pressed,xpos,ypos,SYMIN,SYMAX,AYMAX,SXMIN,SXMAX,AXMAX,press,release,drag
 		if(event.type==3):
 			if(event.code==0):
-				ypos = AYMAX-round((event.value-SYMIN)/(SYMAX-SYMIN)*AYMAX)
+				ypos = round((event.value-SYMIN)/(SYMAX-SYMIN)*AYMAX)
 			if(event.code==1):
-				xpos = round((event.value-SXMIN)/(SXMAX-SXMIN)*AXMAX)
+				xpos = AXMAX-round((event.value-SXMIN)/(SXMAX-SXMIN)*AXMAX)
 				drag(pressed,xpos,ypos)#execute drag
 		elif (event.type ==1):
 			pressed = event.value
 			if(event.value==1):
+				print("LCD down")
 				press(xpos,ypos)#execute press
 			else:
 				release(xpos,ypos)#execute release

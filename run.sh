@@ -9,7 +9,7 @@ trap cleanup SIGINT
 
 sleep 1
 
-python3 main_rev1v3.py
+python3 main_rev2.py
 
 wait -n
 

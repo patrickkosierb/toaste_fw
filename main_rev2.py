@@ -16,7 +16,8 @@ import sendImg
 from PIL import Image
 from io import BytesIO
 from toasterHWI import ToasteHW
-import gui.gui as gui
+#import gui.gui as gui
+import gui
 
 cwd = os.getcwd()
 
@@ -39,6 +40,7 @@ tbuff = []
 abort_state = False
 solTrigger = 0
 crisp_set = 0
+crispiness = 0.5
 
 
 #### TODO: Remove after cnn works ####
@@ -73,6 +75,7 @@ def signal_handler(sig, frame):
 def abort_callBack(channel):
     global abort_state
     print("Abort Initialized")
+    print(channel)
     toaster.emergencyEject()
     abort_state = True
 
@@ -90,32 +93,35 @@ def gui_callBack(crisp):
 ## SETUP ## 
 
 if __name__ == '__main__':
+    print("main 1")
     toaster = ToasteHW(abort_callBack,solenoid_callBack)
     signal.signal(signal.SIGINT, signal_handler)
-    gui.init(gui_callBack)
-
+    #gui.init (gui_callBack)
+    print("main 2")
     # camera config
     cam1 = TCAM(0x55)#address of first esp unfortunatly hardcoded
     cam1.begin()
-
+    print("main 3")
     # load trained model
-    #model = CrispClassifier()
-    #model.load()
+    model = CrispClassifier()
+    model.load()
     
     while(1): # multi cycle while loop
         abort_state = False
         solTrigger = 0
+        print("waiting for sol")
         while(not solTrigger):
             time.sleep(0.01)
         solTrigger = 0
         print("Starting Cycle")
-        gui.setState(1)
-        #TODO: take base picture 
-        while(not crisp_set and not abort_state):
-            time.sleep(0.1)
-        crisp_set = 0
+        #gui.setState(1)
+        cam1.requestPhoto()
+        #while(not crisp_set and not abort_state):
+        #    time.sleep(0.1)
+        #crisp_set = 0
         
         if(not abort_state):
+            print("Crispiness:", crispiness)
             target = crispiness_to_colour(crispiness)
             print("Target:\t\t", target)
             start_ctrl = 1
@@ -131,12 +137,15 @@ if __name__ == '__main__':
                 dt = int(np.round(time.time()-start_time))
 
                 if not(dt%T_SAMPLE): #take picture
-                    toaster.setLeft(0)
-                    toaster.setRight(0)
-                    time.sleep(0.5)
+                    #toaster.setLeft(0)
+                    #toaster.setRight(0)
+                    toaster.setLED(1)
+                    time.sleep(0.6)
                     ret = cam1.requestPhoto()
-                    toaster.setLeft(1)
-                    toaster.setRight(1)
+                    time.sleep(0.3)
+                    toaster.setLED(0)
+                    #toaster.setLeft(1)
+                    #toaster.setRight(1)
                     if(ret):
                         ret = cam1.collect()
                         if(ret):
@@ -148,9 +157,10 @@ if __name__ == '__main__':
                 if buff_len > cur_pic: #read picture
 
                     # process buffer for cnn input 
-                    # img = Image.open(BytesIO(buff[buff_len-1]))
-                    # left_crisp = model.predictCrispiness(img)
-                    # print("Left Crispiness: ",left_crisp)
+                    img = Image.open(BytesIO(bytearray(buff[buff_len-1])))
+                    left_crisp = model.predictCrispiness(img)
+                    #print("Target: ",cri)
+                    print("Current Crispiness: ",left_crisp)
                     # if(left_crisp>=target):
                         # left_done = True
                     # right_done = left_done
@@ -167,6 +177,7 @@ if __name__ == '__main__':
                     
                     cur_pic = buff_len
                     print("Picture read: "+str(dt)+" Buffer length: "+str(buff_len))
+
                 time.sleep(1)
             except Exception as error:
                 print(error)
@@ -176,7 +187,7 @@ if __name__ == '__main__':
         sendImg.sendBuffers(buff,tbuff)
         cleanUp()
         toaster.eject()
-        gui.setState(0)
+        #gui.setState(0)
         #ble_service.set_state(ble.State.IDLE)  
         time.sleep(2)
         toaster.clearEject()

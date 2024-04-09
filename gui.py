@@ -7,33 +7,24 @@ import math
 import threading
 
 toastGIF = []
-slider_img = Image.open("images/slider.png").convert('RGBA')
-start_img = Image.open("images/start.png").convert('RGBA')
-button_callback = None
-start_time = datetime.datetime.now()
-for i in range(0,11):
-    numstr = "0"+str(i)
-    if i >9:
-        numstr=str(i)
-    toastGIF.append(Image.open("images/frame_"+numstr+".png").convert('RGBA'))
+slider_img = None
+start_img= None
+image = None
+ctx= None
 
-image = Image.new('RGBA', (320, 240))
-ctx = ImageDraw.Draw(image)
 white = (255,255,255)
 red = (171,19,19)
 black=(0,0,0)
 base_toast = [255,216,158]
 base_crust = [178,127,68]
-fnt_toaste = ImageFont.truetype('images/OpenSans.ttf', 36)
-fnt_subhead = ImageFont.truetype('images/OpenSans.ttf', 20)
-fnt_head = ImageFont.truetype('images/OpenSans.ttf', 28)
-fnt_small = ImageFont.truetype('images/OpenSans.ttf', 16)
-
+	
+	
 slider_pos = 40
 screen = 0
 requires_update = 1
 last_delta = -1
 gui_thread = None
+button_callback = None
 
 def press_callback(x,y):
 	global screen, requires_update, button_callback, slider_pos
@@ -134,7 +125,25 @@ def guiFunc():
 		time.sleep(0.01)
 
 def init(cb):
-	global start_time,button_callback, touchscreen, gui_thread
+	global start_time,button_callback, touchscreen, gui_thread, slider_img, start_img, image, ctx , fnt_toaste, fnt_subhead, fnt_subhead,fnt_small
+	slider_img = Image.open("images/slider.png").convert('RGBA')
+	start_img = Image.open("images/start.png").convert('RGBA')
+	
+	start_time = datetime.datetime.now()
+	for i in range(0,11):
+		numstr = "0"+str(i)
+		if i >9:
+			numstr=str(i)
+		toastGIF.append(Image.open("images/frame_"+numstr+".png").convert('RGBA'))
+
+	image = Image.new('RGBA', (320, 240))
+	ctx = ImageDraw.Draw(image)
+	
+	fnt_toaste = ImageFont.truetype('images/OpenSans.ttf', 36)
+	fnt_subhead = ImageFont.truetype('images/OpenSans.ttf', 20)
+	fnt_head = ImageFont.truetype('images/OpenSans.ttf', 28)
+	fnt_small = ImageFont.truetype('images/OpenSans.ttf', 16)
+	
 	button_callback=cb
 	touchscreen.Start_Touchscreen(press_callback,release_callback,drag_callback)
 	start_time = datetime.datetime.now()
@@ -149,4 +158,4 @@ def setState(state):
 def tfunc(asss):
 	pass
 	
-init(tfunc)
+#init(tfunc)
