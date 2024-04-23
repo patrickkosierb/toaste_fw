@@ -2,14 +2,13 @@ import numpy as np
 import os
 from PIL import Image
 
-# buf = np.memmap('/dev/fb0', dtype='uint16',mode='w+', shape=(320,240))
-# buf[:] = 0xffff
+buf = np.memmap('/dev/fb0', dtype='uint16',mode='w+', shape=(320,240))
+buf[:] = 0xffff
 
 image_buffer = np.full((320,240),0xffc0,dtype='uint16')
 
 
 def write_to_display(image):
-    pass
     global buf, image_buffer
     image = image.convert('RGB')
     pix = image.load()  #load pixel array
