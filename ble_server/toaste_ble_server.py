@@ -22,7 +22,7 @@ class ToastE_Advertisement(Advertisement):
 class ToastE_Service(Service):
     TOAST_E_SERVICE_UUID = "00000023-710e-4a5b-8d75-3e5b444bc3cf"
 
-    def __init__(self, index):
+    def __init__(self, index, set_crisp_callback, cancel_callback):
         # incomming data
         self._target_crispiness = None
         self.cancel_flag = False
@@ -33,16 +33,25 @@ class ToastE_Service(Service):
         self.time_elapsed = 0 # seconds
         self.state = 'IDLE'
 
+        # callbacks
+        self.set_crisp_callback = set_crisp_callback
+        self.cancel_callback = cancel_callback
+
         Service.__init__(self, index, self.TOAST_E_SERVICE_UUID, True)
         self.add_characteristic(ToastE_Characteristic(self))
 
     def set_target_crispiness(self, crispiness):
         self._target_crispiness = crispiness
+        if self.set_crisp_callback:
+            self.set_crisp_callback(crispiness)
 
-    def set_cancel_flag(self, cancel: bool):
-        self.cancel_flag = cancel
-        # Temp for now:
-        self.set_target_crispiness(None)
+    # def set_cancel_flag(self, cancel: bool):
+    #     self.cancel_flag = cancel
+    #     # Temp for now:
+    #     self.set_target_crispiness(None)
+
+    #     if self.cancel_callback:
+    #         self.cancel_callback()
 
     def get_current_crispiness(self):
         return self.crispiness
@@ -58,7 +67,7 @@ class ToastE_Service(Service):
         return self.cancel_flag
     
     def set_current_crispiness(self, crispiness):
-        self.crispiness = crispiness
+        self.crispiness = round(crispiness*100)
 
     def set_state(self, state):
         self.state = state
@@ -87,7 +96,7 @@ class ToastE_Characteristic(Characteristic):
         state = self.service.get_state()
         
         payload = {'controller_state': state, 'current_crispiness': crispiness, 'target_crispiness': self.service.get_target_crispiness(), 'time_remaining_estimate': self.service.time_remaining, 'time_elapsed': self.service.time_elapsed}
-        print('payload', payload)
+        # print('ble payload', payload)
         
         try:
             payload_bytes = json.dumps(payload).encode('utf-8')
@@ -138,7 +147,10 @@ class ToastE_Characteristic(Characteristic):
 
             if command == MessageTypes.CANCEL:
                 print("Cancel command received")
-                self.service.set_cancel_flag(True)
+                if self.cancel_callback:
+                    self.service.cancel_callback()
+                self.service.set_target_crispiness(None)
+                # self.service.set_cancel_flag(True)
             elif command == MessageTypes.TARGET_CRISPINESS:
                 print("Received Target Crispiness Value: ")
                 data = [int(val) for val in value[1:]]
