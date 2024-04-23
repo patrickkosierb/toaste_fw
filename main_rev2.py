@@ -19,12 +19,11 @@ from io import BytesIO
 from toasterHWI import ToasteHW
 import time_remaining_estimate
 #import gui.gui as gui
-# import gui
+import gui
 
 HARDWARE_CONNECTED = False # TODO: set manual for now, is there a way to make this automatic?
 
 cwd = os.getcwd()
-
 
 toaster = None
 ## OTHER ## 
@@ -98,7 +97,8 @@ def abort_callBack(channel):
     else:
         time.sleep(1)
         ab =toaster.getAbort()
-        # gui.press(ab)
+        if (HARDWARE_CONNECTED):
+            gui.press(ab)
 
 def solenoid_callBack(channel):
     global solTrigger
@@ -220,7 +220,7 @@ if __name__ == '__main__':
                         print("Current Crispiness: ",left_crisp)
                         ble_service.set_current_crispiness(left_crisp) # send update to app
                         time_remaining_estimate.calculate_new_time_estimate(left_crisp, target_crispiness)
-                        
+
                         if(left_crisp>=target_crispiness and dt>10):
                             left_done = True
                         right_done = left_done
@@ -260,7 +260,8 @@ if __name__ == '__main__':
         cleanUp()
         toaster.eject()
         ble_service.set_state(State.DONE) # can we hold this state longer? so app holds done screen longer.
-        # gui.setState(0)
+        if (HARDWARE_CONNECTED):
+            gui.setState(0)
         time.sleep(3)
         toaster.clearEject()
         
