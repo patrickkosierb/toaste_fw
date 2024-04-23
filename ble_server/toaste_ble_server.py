@@ -140,14 +140,13 @@ class ToastE_Characteristic(Characteristic):
         return value
     
     def WriteValue(self, value, options):
-        # TODO: extract command from value
-        print("WriteValue: " + str(value))
+        # print("WriteValue: " + str(value))
         try:
             command = int(value[0])
 
             if command == MessageTypes.CANCEL:
                 print("Cancel command received")
-                if self.cancel_callback:
+                if self.service.cancel_callback:
                     self.service.cancel_callback()
                 self.service.set_target_crispiness(None)
                 # self.service.set_cancel_flag(True)

@@ -17,11 +17,11 @@ import sendImg
 from PIL import Image
 from io import BytesIO
 from toasterHWI import ToasteHW
-from time_remaining_estimate import get_new_time_remaining
+import time_remaining_estimate
 #import gui.gui as gui
 # import gui
 
-HARDWARE_CONNECTED = False
+HARDWARE_CONNECTED = False # TODO: set manual for now, is there a way to make this automatic?
 
 cwd = os.getcwd()
 
@@ -50,7 +50,7 @@ abort_mode = 0
 
 ble_service = None
 
-# TODO: merge abort_state, and other state variables in to State enum
+# TODO: merge abort_state, and other state variables into State enum?
 class State(str, enum.Enum):
     IDLE = 'IDLE'
     CONFIGURED = 'CONFIGURED'
@@ -118,7 +118,6 @@ def gui_callBack(crisp_input):
 
 def ble_cancel_callback():
     global abort_state, toaster, ble_service
-    print("BLE Cancel Received")
     toaster.emergencyEject()
     abort_state = True
     ble_service.set_state(State.IDLE)
@@ -143,12 +142,14 @@ if __name__ == '__main__':
         model = CrispClassifier()
         model.load()
     
+    # timer thread setup with ble callback
+    time_remaining_estimate.init(ble_service.set_time_remaining)
+    
     while(1): # multi cycle while loop
-        print("\n\n\n Loop reset \n\n\n")
         ble_service.set_state(State.IDLE)
         abort_state = False
         solTrigger = 0
-        print("waiting for sol")
+        print("\n\nNew cycle!\nwaiting for sol")
         while(not solTrigger):
             time.sleep(0.01)
             if (not HARDWARE_CONNECTED):
@@ -159,13 +160,14 @@ if __name__ == '__main__':
                     break
         solTrigger = 0
         abort_mode = 1
+
+        # wait for target_crisp from either LCD or BLE
         while(not crisp_set):
            time.sleep(0.01)
         crip_set = 0
         abort_mode = 0
         print("Starting Cycle")
-        time_left = get_new_time_remaining(0, target_crispiness)
-        ble_service.set_time_remaining(time_left)
+        time_remaining_estimate.calculate_new_time_estimate(0, target_crispiness)
         ble_service.set_state(State.TOASTING)
         #gui.setState(1)
         if (HARDWARE_CONNECTED):
@@ -188,6 +190,7 @@ if __name__ == '__main__':
         while(dt<MAX_TIME and not (left_done and right_done) and not abort_state):
             try:
                 dt = int(np.round(time.time()-start_time))
+                ble_service.set_time_elapsed(dt)
 
                 if (HARDWARE_CONNECTED):
                     if not(dt%T_SAMPLE): #take picture
@@ -216,6 +219,8 @@ if __name__ == '__main__':
                         print("Target: ",target_crispiness)
                         print("Current Crispiness: ",left_crisp)
                         ble_service.set_current_crispiness(left_crisp) # send update to app
+                        time_remaining_estimate.calculate_new_time_estimate(left_crisp, target_crispiness)
+                        
                         if(left_crisp>=target_crispiness and dt>10):
                             left_done = True
                         right_done = left_done
@@ -223,6 +228,7 @@ if __name__ == '__main__':
                         cur_pic = buff_len
                         print("Picture read: "+str(dt)+" Buffer length: "+str(buff_len))
                 else:
+                    left_crisp = 0
                     # Testing without hardware
                     x = input("\nType to simulate cooking \n\n") # Temp
                     if x == '':
@@ -234,8 +240,7 @@ if __name__ == '__main__':
                     print("Target: ",target_crispiness)
                     print("Current Crispiness: ",left_crisp)
                     ble_service.set_current_crispiness(left_crisp) # send update to app
-                    time_left = get_new_time_remaining(left_crisp, target_crispiness)
-                    ble_service.set_time_remaining(time_left)
+                    time_remaining_estimate.calculate_new_time_estimate(left_crisp, target_crispiness)
 
                     if (left_crisp >= target_crispiness):
                         print("Crispiness reached")
@@ -247,12 +252,14 @@ if __name__ == '__main__':
                 print(error)
                 toaster.emergencyEject()
                 abort_state=True
+                ble_service.set_state(State.CANCELLED) # can we hold this state longer? so app holds done screen longer.
+
             
         if (HARDWARE_CONNECTED):
             sendImg.sendBuffers(buff,tbuff)
         cleanUp()
         toaster.eject()
-        ble_service.set_state(State.DONE)
+        ble_service.set_state(State.DONE) # can we hold this state longer? so app holds done screen longer.
         # gui.setState(0)
         time.sleep(3)
         toaster.clearEject()
