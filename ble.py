@@ -14,7 +14,7 @@ class State(str, enum.Enum):
     CANCELLED = 'CANCELLED'
 
 
-def start_ble(app):
+def run_ble(app):
     try:
         app.run()
     except KeyboardInterrupt:
@@ -22,7 +22,7 @@ def start_ble(app):
     except Exception as e:
         print(e)
 
-def reader(ble_service):
+def demo_reader(ble_service):
     crispiness = 0
     time_remaining_sec = 200
     time_elapsed_sec = 0
@@ -63,8 +63,11 @@ def reader(ble_service):
                 crispiness = round(crispiness)
             elif (target): 
                 state = State.TOASTING
+                x = input("Type to simulate toast done ")
+                if x:
+                    state = State.DONE
             elif (state == State.IDLE):
-                x = input("Type when Toast-E is ready")
+                x = input("Type to simulate solenoid lowered ")
                 if x:
                     state = State.CONFIGURED
             else:
@@ -81,10 +84,11 @@ def reader(ble_service):
     except Exception as e:
         print(e)
 
-if __name__ == "__main__":
+
+def init(set_crisp_callback=None,cancel_callback=None):
     app = Application()
 
-    ble_service = ToastE_Service(0)
+    ble_service = ToastE_Service(0, set_crisp_callback, cancel_callback)
     app.add_service(ble_service)
 
     app.register()
@@ -93,10 +97,17 @@ if __name__ == "__main__":
     adv.register()
 
     # start the BLE server
-    # start_ble(app)
-    ble_thread = threading.Thread(target=start_ble, args=(app,))
+    # run_ble(app)
+    ble_thread = threading.Thread(target=run_ble, args=(app,))
     ble_thread.start()
 
+    return ble_service
+
+
+if __name__ == "__main__":
+    print("testing")
+    ble_service = init()
+    
     # start the BLE reader
-    reader_thread = threading.Thread(target=reader, args=(ble_service,))
+    reader_thread = threading.Thread(target=demo_reader, args=(ble_service,))
     reader_thread.start()
