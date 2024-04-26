@@ -7,6 +7,10 @@ This repository comprises 2 main functions:
 
 Usage 
 ----- 
+### Dependencies
+
+Install Python requirements in primary or virtual environment:
+```pip install -r requirements.txt```
 
 
 Contribution and Credit
