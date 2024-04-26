@@ -18,6 +18,7 @@ device_path = ""
     
 
 def Start_Touchscreen(pressF,releaseF,dragF):
+	print("booting touchscreen")
 	global press,release,drag ,touchscreen_thread,device_path
 	press = pressF
 	release = releaseF
@@ -36,6 +37,7 @@ def TouchscreenFunc():
 	dev = evdev.InputDevice(device_path)
 	print(dev)
 	dev.grab()
+	print("Touchscreen Yoinked")
 	for event in dev.read_loop():
 		global pressed,xpos,ypos,SYMIN,SYMAX,AYMAX,SXMIN,SXMAX,AXMAX,press,release,drag
 		if(event.type==3):

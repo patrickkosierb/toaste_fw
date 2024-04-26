@@ -73,25 +73,26 @@ def signal_handler(sig, frame):
     exit()
 
 def abort_callBack(channel):
-    global abort_state, toaster
+    global abort_state, toaster, abort_mode
     print("abort mode:",abort_mode)
-    if abort_mode:
+    if abort_mode == 0:
         print("Abort Initialized")
         toaster.emergencyEject()
         abort_state = True
     else:
         time.sleep(1)
-        ab =toaster.getAbort()
+        ab = toaster.getAbort()
         gui.press(ab)
     
 
 def solenoid_callBack(channel):
     global solTrigger
     toaster.setSolenoid(1)
-    print("Slider down")
     solTrigger = 1
+    print("Slider down")
 
 def gui_callBack(crisp):
+    print("Gui returned:",crisp)
     global crispiness, crisp_set
     crispiness = crisp/100
     crisp_set = 1
@@ -102,30 +103,36 @@ if __name__ == '__main__':
     print("main 1")
     toaster = ToasteHW(abort_callBack,solenoid_callBack)
     signal.signal(signal.SIGINT, signal_handler)
-    #gui.init (gui_callBack)
     print("main 2")
     # camera config
     cam1 = TCAM(0x55)#address of first esp unfortunatly hardcoded
-    cam1.begin()
+    
     print("main 3")
     # load trained model
     model = CrispClassifier()
     model.load()
-    
+    gui.init(gui_callBack)
     while(1): # multi cycle while loop
         abort_state = False
         solTrigger = 0
+        gui.setState(0)
+        time.sleep(0.5)
         print("waiting for sol")
         while(not solTrigger):
             time.sleep(0.01)
         solTrigger = 0
+        gui.setState(1)
         abort_mode = 1
-        #while(not crisp_set):
-        #    time.sleep(0.01)
-        crip_set = 0
+        print("waiting input")
+        time.sleep(1)
+        cam1.begin()
+        while(not crisp_set):
+            time.sleep(0.01)
+        crisp_set = 0
+        gui.setState(2)
+        time.sleep(4)
         abort_mode = 0
         print("Starting Cycle")
-        #gui.setState(1)
         cam1.requestPhoto()
         cam1.collect()
         #while(not crisp_set and not abort_state):
@@ -169,9 +176,9 @@ if __name__ == '__main__':
                     # process buffer for cnn input 
                     img = Image.open(BytesIO(bytearray(buff[buff_len-1])))
                     left_crisp = model.predictCrispiness(img)
-                    print("Target: ",cripsiness)
+                    print("Target: ",crispiness)
                     print("Current Crispiness: ",left_crisp)
-                    if(left_crisp>=target and dt>10):
+                    if(left_crisp>=crispiness and dt>10):
                         left_done = True
                     right_done = left_done
 

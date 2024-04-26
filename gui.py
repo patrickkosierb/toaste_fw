@@ -2,29 +2,38 @@ import time
 import datetime
 from PIL import Image, ImageDraw, ImageFont
 import display
-import touchscreen
 import math
 import threading
+import touchscreen
 
 toastGIF = []
-slider_img = None
-start_img= None
-image = None
-ctx= None
+slider_img = Image.open("images/slider.png").convert('RGBA')
+start_img = Image.open("images/start.png").convert('RGBA')
+button_callback = None
+start_time = datetime.datetime.now()
+for i in range(0,11):
+    numstr = "0"+str(i)
+    if i >9:
+        numstr=str(i)
+    toastGIF.append(Image.open("images/frame_"+numstr+".png").convert('RGBA'))
 
+image = Image.new('RGBA', (320, 240))
+ctx = ImageDraw.Draw(image)
 white = (255,255,255)
 red = (171,19,19)
 black=(0,0,0)
 base_toast = [255,216,158]
 base_crust = [178,127,68]
-	
-	
-slider_pos = 40
+fnt_toaste = ImageFont.truetype('images/OpenSans.ttf', 36)
+fnt_subhead = ImageFont.truetype('images/OpenSans.ttf', 20)
+fnt_head = ImageFont.truetype('images/OpenSans.ttf', 28)
+fnt_small = ImageFont.truetype('images/OpenSans.ttf', 16)
+
+slider_pos = 30
 screen = 0
 requires_update = 1
 last_delta = -1
 gui_thread = None
-button_callback = None
 
 def press_callback(x,y):
 	global screen, requires_update, button_callback, slider_pos
@@ -32,8 +41,6 @@ def press_callback(x,y):
 		if(x>230):
 			screen = 2
 			button_callback(slider_pos)
-	elif(screen == 0):
-		screen =1#should just pass but for testing
 	requires_update = 1
 
 def release_callback(x,y):
@@ -125,36 +132,33 @@ def guiFunc():
 		time.sleep(0.01)
 
 def init(cb):
-	global start_time,button_callback, touchscreen, gui_thread, slider_img, start_img, image, ctx , fnt_toaste, fnt_subhead, fnt_subhead,fnt_small
-	slider_img = Image.open("images/slider.png").convert('RGBA')
-	start_img = Image.open("images/start.png").convert('RGBA')
-	
-	start_time = datetime.datetime.now()
-	for i in range(0,11):
-		numstr = "0"+str(i)
-		if i >9:
-			numstr=str(i)
-		toastGIF.append(Image.open("images/frame_"+numstr+".png").convert('RGBA'))
-
-	image = Image.new('RGBA', (320, 240))
-	ctx = ImageDraw.Draw(image)
-	
-	fnt_toaste = ImageFont.truetype('images/OpenSans.ttf', 36)
-	fnt_subhead = ImageFont.truetype('images/OpenSans.ttf', 20)
-	fnt_head = ImageFont.truetype('images/OpenSans.ttf', 28)
-	fnt_small = ImageFont.truetype('images/OpenSans.ttf', 16)
-	
+	global start_time,button_callback, touchscreen, gui_thread
 	button_callback=cb
-	touchscreen.Start_Touchscreen(press_callback,release_callback,drag_callback)
 	start_time = datetime.datetime.now()
+	touchscreen.Start_Touchscreen(press_callback,release_callback,drag_callback)
 	gui_thread = threading.Thread(target=guiFunc, args=())
 	gui_thread.start()
+	print("started gui")
 	
 def setState(state):
 	global screen,requires_update
 	screen = state
 	requires_update = 1
-	
+
+def press(short):
+	global screen, requires_update,slider_pos
+	print("press", short)
+	if(screen == 1):
+		if(short):
+			slider_pos=slider_pos+10
+			if(slider_pos>100):
+				slider_pos = 10
+		else:
+			screen =2
+			time.sleep(0.1)
+			button_callback(slider_pos)
+		requires_update = 1
+		
 def tfunc(asss):
 	pass
 	
