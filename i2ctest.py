@@ -20,15 +20,17 @@ class TCAM:
 		self._failSleepTime = 1
 		self._dt = 0.0001
 		self._hash = crcengine.create_from_params(crcengine.CrcParams(0x07, 8, 0, reflect_in=True, reflect_out=True, xor_out=0))
-  	
-	def begin(self):
 		# Open I2C bus
 		self._bus = SMBus(1,force=True)
+  	
+	def begin(self):
 		# Make sure we have the right device
 		ret = False
 		if(self.ping()):
 			ret = self.config()
 			pass
+		else:
+			print("Error No i2c device found")
 		time.sleep(1)
 		print(ret)
 		return ret

@@ -1,8 +1,8 @@
 import RPi.GPIO as GPIO
-
+import time
 ## GPIO MACROS ## 
 SOLENOID_IN = 26
-ABORT_IN = 17
+ABORT_IN = 5
 SOLENOID_OUT  = 27
 LEFT_CNTRL  = 22
 RIGHT_CNTRL = 23
@@ -20,7 +20,7 @@ class ToasteHW:
         GPIO.setup(LED_CNTRL, GPIO.LOW)
         GPIO.output(LEFT_CNTRL, GPIO.LOW)
         GPIO.output(RIGHT_CNTRL, GPIO.LOW)
-        GPIO.output(SOLENOID_OUT, GPIO.HIGH)
+        GPIO.output(SOLENOID_OUT, GPIO.LOW)
         GPIO.add_event_detect(ABORT_IN, GPIO.FALLING, callback=abortCB, bouncetime=300)
         GPIO.add_event_detect(SOLENOID_IN, GPIO.FALLING, callback=solenoidCB, bouncetime=100)
         self.emergency_eject_state=0
@@ -40,9 +40,9 @@ class ToasteHW:
 
     def setSolenoid(self,sig):
         if(sig == 1 and self.emergency_eject_state == 0):
-            GPIO.output(SOLENOID_OUT, GPIO.LOW)
-        else:
             GPIO.output(SOLENOID_OUT, GPIO.HIGH)
+        else:
+            GPIO.output(SOLENOID_OUT, GPIO.LOW)
             
     def setLED(self,sig):
         if(sig == 1 and self.emergency_eject_state == 0):
@@ -54,7 +54,8 @@ class ToasteHW:
         GPIO.output(RIGHT_CNTRL, GPIO.LOW)
         GPIO.output(LEFT_CNTRL, GPIO.LOW)
         GPIO.output(LED_CNTRL, GPIO.LOW)
-        GPIO.output(SOLENOID_OUT, GPIO.HIGH)
+        GPIO.output(SOLENOID_OUT, GPIO.LOW)
+        time.sleep(0.1)
         print("Normal Ejected!")
 
     def emergencyEject(self):
@@ -62,7 +63,7 @@ class ToasteHW:
         GPIO.output(RIGHT_CNTRL, GPIO.LOW)
         GPIO.output(LEFT_CNTRL, GPIO.LOW)
         GPIO.output(LED_CNTRL, GPIO.LOW)
-        GPIO.output(SOLENOID_OUT, GPIO.HIGH)
+        GPIO.output(SOLENOID_OUT, GPIO.LOW)
         print("Emergency Ejected!")
 
     def clearEject(self):

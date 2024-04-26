@@ -4,6 +4,7 @@ from PIL import Image, ImageDraw, ImageFont
 import display
 import math
 import threading
+import touchscreen as ts
 
 toastGIF = []
 slider_img = Image.open("images/slider.png").convert('RGBA')
@@ -28,35 +29,35 @@ fnt_subhead = ImageFont.truetype('images/OpenSans.ttf', 20)
 fnt_head = ImageFont.truetype('images/OpenSans.ttf', 28)
 fnt_small = ImageFont.truetype('images/OpenSans.ttf', 16)
 
-slider_pos = 40
+slider_pos = 10
 screen = 0
 requires_update = 1
 last_delta = -1
 gui_thread = None
 
-#def press_callback(x,y):
-#	global screen, requires_update, button_callback, slider_pos
-#	if(screen == 1):
-#		if(x>230):
-#			screen = 2
-#			button_callback(slider_pos)
-#	requires_update = 1
-#
-#def release_callback(x,y):
-#	pass
-#	
-#def drag_callback(pressed,x,y):
-#	global screen, requires_update, slider_pos
-#	if(screen==1):
-#		if(x<220):
-#			if(y<70):
-#				slider_pos = 100
-#			elif(y>=70 and y<=210):
-#				slider_pos	= int((210 -y)/(210-70)*100)
-#			else:
-#				slider_pos = 0
-#			requires_update = 1
-#
+def press_callback(x,y):
+	global screen, requires_update, button_callback, slider_pos
+	if(screen == 1):
+		if(x>230):
+			screen = 2
+			button_callback(slider_pos)
+	requires_update = 1
+
+def release_callback(x,y):
+	pass
+	
+def drag_callback(pressed,x,y):
+	global screen, requires_update, slider_pos
+	if(screen==1):
+		if(x<220):
+			if(y<70):
+				slider_pos = 100
+			elif(y>=70 and y<=210):
+				slider_pos	= int((210 -y)/(210-70)*100)
+			else:
+				slider_pos = 0
+			requires_update = 1
+
 
 
 def color_adj(base):
@@ -134,8 +135,10 @@ def init(cb):
 	global start_time,button_callback, touchscreen, gui_thread
 	button_callback=cb
 	start_time = datetime.datetime.now()
+	ts.Start_Touchscreen(press_callback,release_callback,drag_callback)
 	gui_thread = threading.Thread(target=guiFunc, args=())
 	gui_thread.start()
+	
 	
 def setState(state):
 	global screen,requires_update
@@ -156,4 +159,4 @@ def press(short):
 def tfunc(asss):
 	pass
 	
-init(tfunc)
+#init(tfunc)
